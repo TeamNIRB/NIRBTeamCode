@@ -1,5 +1,5 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
-package org.firstinspires.ftc.teamcode;
+//package org.firstinspires.ftc.teamcode;
 
 // Autonomous test program using dead wheels
 // Everything is currently untested
@@ -7,10 +7,13 @@ package org.firstinspires.ftc.teamcode;
 //Imports
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.hardware.PWMOutputEx;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 @Autonomous
 
@@ -107,6 +110,15 @@ public class testpod extends LinearOpMode
 
         int currentDistance = PodBack.getCurrentPosition() / ticks_to_inch;
         int target = currentDistance + inches;
+
+        int leftCurrentPosition = PodLeft.getCurrentPosition();
+        int rightCurrentPosition = PodRight.getCurrentPosition();
+
+        if(PodRight.getCurrentPosition() > rightCurrentPosition)
+        {
+            telemetry.addData("pod-right variance ", PodRight.getCurrentPosition() - rightCurrentPosition);
+        }
+
         while(currentDistance < target)
         {
             BackLeft.setPower(driveSpeed);
@@ -124,6 +136,15 @@ public class testpod extends LinearOpMode
     {
         int currentDistance = PodBack.getCurrentPosition() / ticks_to_inch;
         int target = currentDistance + inches;
+
+        int leftCurrentPosition = PodLeft.getCurrentPosition();
+        int rightCurrentPosition = PodRight.getCurrentPosition();
+
+        if(PodLeft.getCurrentPosition() > leftCurrentPosition || PodLeft.getCurrentPosition() < leftCurrentPosition)
+        {
+            telemetry.addData("pod-left variance ", PodLeft.getCurrentPosition() - leftCurrentPosition);
+        }
+
         while(currentDistance < target)
         {
             BackLeft.setPower(driveSpeed *= -1);
@@ -184,7 +205,7 @@ public class testpod extends LinearOpMode
             activeClaw = 1;
         }
     }
-    
+
     public void zeroPosition()
     {
         PivotServo.setPosition(servoPivotGrabPosition);
@@ -209,7 +230,7 @@ public class testpod extends LinearOpMode
         sleep(500);
         strafeRight(3, 0.5);
         sleep(500);
-        
+
         //claw test code
         openClaw();
         sleep(200);
