@@ -1,6 +1,8 @@
+package org.firstinspires.ftc.teamcode.Autonomous;
 package org.firstinspires.ftc.teamcode;
 
-//NIRB Team main drive program -- Mecanum Drive; Pivot Arm; Vertical Griper
+// Autonomous test program using dead wheels
+// Everything is currently untested
 
 //Imports
 
@@ -9,7 +11,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.acmerobotics.roadrunner.geometry.Pose2d;
 
 @Autonomous
 
@@ -62,12 +63,13 @@ public class testpod extends LinearOpMode
 
     final int ticks_to_inch = 336;
 
-    public void moveForward(int targetDistance, double driveSpeed)
+    public void moveForward(int inches, double driveSpeed)
     {
-        targetDistance /= ticks_to_inch;
-        int currentDistance = PodLeft.getCurrentPosition() / ticks_to_inch;
 
-        while(currentDistance <= targetDistance)
+        int currentDistance = PodLeft.getCurrentPosition() / ticks_to_inch;
+        int target = currentDistance + inches;
+
+        while(currentDistance < target)
         {
             BackLeft.setPower(driveSpeed);
             BackRight.setPower(driveSpeed);
@@ -80,10 +82,146 @@ public class testpod extends LinearOpMode
         FrontRight.setPower(0);
     }
 
+    public void moveBackward(int inches, double driveSpeed)
+    {
+
+        int currentDistance = PodLeft.getCurrentPosition() / ticks_to_inch;
+        int target = currentDistance + inches;
+        driveSpeed *= -1;
+
+        while(currentDistance < target)
+        {
+            BackLeft.setPower(driveSpeed);
+            BackRight.setPower(driveSpeed);
+            FrontLeft.setPower(driveSpeed);
+            FrontRight.setPower(driveSpeed);
+        }
+        BackLeft.setPower(0);
+        BackRight.setPower(0);
+        FrontLeft.setPower(0);
+        FrontRight.setPower(0);
+    }
+
+    public void strafeLeft(int inches, double driveSpeed)
+    {
+
+        int currentDistance = PodBack.getCurrentPosition() / ticks_to_inch;
+        int target = currentDistance + inches;
+        while(currentDistance < target)
+        {
+            BackLeft.setPower(driveSpeed);
+            BackRight.setPower(driveSpeed);
+            FrontLeft.setPower(driveSpeed *= -1);
+            FrontRight.setPower(driveSpeed *= -1);
+        }
+        BackLeft.setPower(0);
+        BackRight.setPower(0);
+        FrontLeft.setPower(0);
+        FrontRight.setPower(0);
+    }
+
+    public void strafeRight(int inches, double driveSpeed)
+    {
+        int currentDistance = PodBack.getCurrentPosition() / ticks_to_inch;
+        int target = currentDistance + inches;
+        while(currentDistance < target)
+        {
+            BackLeft.setPower(driveSpeed *= -1);
+            BackRight.setPower(driveSpeed *= -1);
+            FrontLeft.setPower(driveSpeed);
+            FrontRight.setPower(driveSpeed);
+        }
+        BackLeft.setPower(0);
+        BackRight.setPower(0);
+        FrontLeft.setPower(0);
+        FrontRight.setPower(0);
+    }
+
+    public void openClaw()
+    {
+        if(activeClaw == 1)
+        {
+            ClawServo1.setPosition(servoClaw1Open);
+        }
+        if(activeClaw == 2)
+        {
+            ClawServo2.setPosition(servoClaw2Open);
+        }
+    }
+
+    public void closeClaw()
+    {
+        if(activeClaw == 1)
+        {
+            ClawServo1.setPosition(servoClaw1Closed);
+        }
+        if(activeClaw == 2)
+        {
+            ClawServo2.setPosition(servoClaw2Closed);
+        }
+    }
+
+    //USES SLEEP TEMPORARILY
+    public void flipClaw()
+    {
+        if(activeClaw == 1)
+        {
+            PivotServo.setPosition(servoPivotRotatePosition);
+            sleep(200);
+            RotateServo.setPosition(servoRotateBottom);
+            sleep(200);
+            PivotServo.setPosition(servoPivotGrabPosition);
+            activeClaw = 2;
+        }
+
+        if(activeClaw == 2)
+        {
+            PivotServo.setPosition(servoPivotRotatePosition);
+            sleep(200);
+            RotateServo.setPosition(servoRotateTop);
+            sleep(200);
+            PivotServo.setPosition(servoPivotGrabPosition);
+            activeClaw = 1;
+        }
+    }
+    
+    public void zeroPosition()
+    {
+        PivotServo.setPosition(servoPivotGrabPosition);
+        ClawServo1.setPosition(servoClaw1Closed);
+        ClawServo2.setPosition(servoClaw2Closed);
+        sleep(200);
+        RotateServo.setPosition(servoRotateTop);
+        sleep(200);
+        PivotServo.setPosition(servoPivotGrabPosition);
+        activeClaw = 1;
+    }
+
     public void autonomous()
     {
+        zeroPosition();
+        //movement test code
         moveForward(3, 0.5);
-
+        sleep(500);
+        moveBackward(3, 0.5);
+        sleep(500);
+        strafeLeft(3, 0.5);
+        sleep(500);
+        strafeRight(3, 0.5);
+        sleep(500);
+        
+        //claw test code
+        openClaw();
+        sleep(200);
+        flipClaw();
+        sleep(200);
+        openClaw();
+        sleep(200);
+        closeClaw();
+        sleep(200);
+        flipClaw();
+        sleep(200);
+        closeClaw();
     }
 
 
@@ -117,13 +255,11 @@ public class testpod extends LinearOpMode
         FrontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
         SlideLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         SlideRight.setDirection(DcMotorSimple.Direction.FORWARD);
-        //Actuator.setDirection(DcMotorSimple.Direction.FORWARD);
 
         /*
         Set brake behavior
         */
 
-        //PivotMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BackLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         FrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -138,27 +274,9 @@ public class testpod extends LinearOpMode
         SlideRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         SlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        sleep(200);
-        PivotServo.setPosition(servoPivotRotatePosition);
-        sleep(500);
-        RotateServo.setPosition(servoRotateTop);
-        activeClaw = 1;
-        sleep(500);
-
-        ClawServo2.setPosition(servoClaw2Open);
-        ClawServo1.setPosition(servoClaw1Open);
-        PivotServo.setPosition(servoPivotGrabPosition);
-
         while(opModeIsActive())
         {
             autonomous();
-            telemetry.addData("SlideLeft", SlideLeft.getCurrentPosition());
-            telemetry.addData("SlideRight", SlideRight.getCurrentPosition());
-            telemetry.addData("Tick", slideTickPosition);
-            telemetry.addData("Pivot", PivotServo.getPosition());
-            telemetry.addData("Rotate", RotateServo.getPosition());
-            telemetry.addData("Claw1", ClawServo1.getPosition());
-            telemetry.addData("Claw2", ClawServo2.getPosition());
 
             telemetry.update();
         }
