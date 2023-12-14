@@ -94,10 +94,10 @@ public class testpod extends LinearOpMode
 
         while(currentDistance < target)
         {
-            BackLeft.setPower(driveSpeed);
-            BackRight.setPower(driveSpeed);
-            FrontLeft.setPower(driveSpeed);
-            FrontRight.setPower(driveSpeed);
+            BackLeft.setPower(driveSpeed *= -1);
+            BackRight.setPower(driveSpeed *= -1);
+            FrontLeft.setPower(driveSpeed *= -1);
+            FrontRight.setPower(driveSpeed *= -1);
         }
         BackLeft.setPower(0);
         BackRight.setPower(0);
@@ -114,8 +114,9 @@ public class testpod extends LinearOpMode
         int leftCurrentPosition = PodLeft.getCurrentPosition();
         int rightCurrentPosition = PodRight.getCurrentPosition();
 
-        if(PodRight.getCurrentPosition() > rightCurrentPosition)
+        if(PodRight.getCurrentPosition() > rightCurrentPosition || PodRight.getCurrentPosition() < rightCurrentPosition)
         {
+            // error correcting code will be added later.
             telemetry.addData("pod-right variance ", PodRight.getCurrentPosition() - rightCurrentPosition);
         }
 
@@ -142,6 +143,7 @@ public class testpod extends LinearOpMode
 
         if(PodLeft.getCurrentPosition() > leftCurrentPosition || PodLeft.getCurrentPosition() < leftCurrentPosition)
         {
+            // error correcting code will be added later.
             telemetry.addData("pod-left variance ", PodLeft.getCurrentPosition() - leftCurrentPosition);
         }
 
