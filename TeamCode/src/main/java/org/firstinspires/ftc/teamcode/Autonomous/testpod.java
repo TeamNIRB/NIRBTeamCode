@@ -1,4 +1,5 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
+
 //package org.firstinspires.ftc.teamcode;
 
 // Autonomous test program using dead wheels
@@ -12,12 +13,12 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 @Autonomous
 
-public class testpod extends LinearOpMode
+public class TestPod extends LinearOpMode
 {
 
     /*
@@ -65,20 +66,25 @@ public class testpod extends LinearOpMode
     //0.3
 
     final int ticks_to_inch = 336;
+    int currentPosition = PodLeft.getCurrentPosition();
 
     public void moveForward(int inches, double driveSpeed)
     {
 
-        int currentDistance = PodLeft.getCurrentPosition() / ticks_to_inch;
-        int target = currentDistance + inches;
-
-        while(currentDistance < target)
+        while(opModeIsActive())
         {
-            BackLeft.setPower(driveSpeed);
-            BackRight.setPower(driveSpeed);
-            FrontLeft.setPower(driveSpeed);
-            FrontRight.setPower(driveSpeed);
+            int target = currentPosition + (inches * ticks_to_inch);
+            telemetry.addData("target", target);
+
+            while(PodLeft.getCurrentPosition() < target)
+            {
+                BackLeft.setPower(driveSpeed);
+                BackRight.setPower(driveSpeed);
+                FrontLeft.setPower(driveSpeed);
+                FrontRight.setPower(driveSpeed);
+            }
         }
+
         BackLeft.setPower(0);
         BackRight.setPower(0);
         FrontLeft.setPower(0);
@@ -92,12 +98,12 @@ public class testpod extends LinearOpMode
         int target = currentDistance + inches;
         driveSpeed *= -1;
 
-        while(currentDistance < target)
+        if(currentDistance < target)
         {
-            BackLeft.setPower(driveSpeed *= -1);
-            BackRight.setPower(driveSpeed *= -1);
-            FrontLeft.setPower(driveSpeed *= -1);
-            FrontRight.setPower(driveSpeed *= -1);
+            BackLeft.setPower(driveSpeed);
+            BackRight.setPower(driveSpeed);
+            FrontLeft.setPower(driveSpeed);
+            FrontRight.setPower(driveSpeed);
         }
         BackLeft.setPower(0);
         BackRight.setPower(0);
@@ -223,28 +229,8 @@ public class testpod extends LinearOpMode
     public void autonomous()
     {
         zeroPosition();
-        //movement test code
-        moveForward(3, 0.5);
-        sleep(500);
-        moveBackward(3, 0.5);
-        sleep(500);
-        strafeLeft(3, 0.5);
-        sleep(500);
-        strafeRight(3, 0.5);
-        sleep(500);
-
-        //claw test code
-        openClaw();
         sleep(200);
-        flipClaw();
-        sleep(200);
-        openClaw();
-        sleep(200);
-        closeClaw();
-        sleep(200);
-        flipClaw();
-        sleep(200);
-        closeClaw();
+        moveForward(2, 0.5);
     }
 
 
@@ -272,10 +258,13 @@ public class testpod extends LinearOpMode
         Reverse motors
         */
 
-        BackRight.setDirection(DcMotorSimple.Direction.REVERSE);
-        FrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
-        BackLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-        FrontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        FrontRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        FrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        BackRight.setDirection(DcMotorSimple.Direction.FORWARD);
+
         SlideLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         SlideRight.setDirection(DcMotorSimple.Direction.FORWARD);
 
@@ -292,6 +281,7 @@ public class testpod extends LinearOpMode
 
         waitForStart();
 
+
         SlideLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         SlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         SlideRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -300,6 +290,10 @@ public class testpod extends LinearOpMode
         while(opModeIsActive())
         {
             autonomous();
+            telemetry.addData("podleft", PodLeft.getCurrentPosition());
+            telemetry.addData("current position", currentPosition);
+
+
 
             telemetry.update();
         }
