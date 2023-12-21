@@ -27,6 +27,14 @@ public class ImageTest extends OpMode
     private DcMotor BackRight;
     private DcMotor FrontRight;
 
+    public boolean isLeft = false;
+    public boolean isRight = false;
+    public boolean isMiddle = false;
+
+
+    private final int camWidth = 1080;
+    private final int camHeight = 720;
+
     public void setup()
     {
         BackLeft = hardwareMap.get(DcMotor.class, "BackLeft");
@@ -51,7 +59,7 @@ public class ImageTest extends OpMode
     {
         setup();
 
-        WebcamName webcamName = hardwareMap.get(WebcamName.class, "webcam");
+        WebcamName webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         cam = OpenCvCameraFactory.getInstance().createWebcam(webcamName, cameraMonitorViewId);
 
@@ -62,7 +70,7 @@ public class ImageTest extends OpMode
                                       @Override
                                       public void onOpened()
                                       {
-                                          cam.startStreaming(640, 360, OpenCvCameraRotation.UPRIGHT);
+                                          cam.startStreaming(1280, 720, OpenCvCameraRotation.UPRIGHT);
                                       }
 
                                       @Override
@@ -94,8 +102,8 @@ public class ImageTest extends OpMode
             Imgproc.cvtColor(input, YCbCr, Imgproc.COLOR_RGB2HSV);
             //https://www.youtube.com/watch?v=547ZUZiYfQE
 
-            Rect leftRect = new Rect(1, 1, 319, 359);
-            Rect rightRect = new Rect(320, 1, 319, 359);
+            Rect leftRect = new Rect(1, 1, 639, 719);
+            Rect rightRect = new Rect(640, 1, 639, 719);
 
             input.copyTo(outPut);
             Imgproc.rectangle(outPut, leftRect, color, 2);
@@ -114,16 +122,22 @@ public class ImageTest extends OpMode
 
             if(leftavg.val[0] > rightavg.val[0])
             {
-                telemetry.addLine("left");
+                isLeft = true;
+                telemetry.addData("Left", isLeft);
             }
+            
+            if(rightavg.val[0] > leftavg.val[0])
+            {
+                isRight = true;
+                telemetry.addData("Right", isRight);
+            }
+            
             else
             {
-                telemetry.addLine("right");
+                isLeft = false;
+                isRight =false;
             }
-
-
-
-
+            
             return(outPut);
         }
     }
