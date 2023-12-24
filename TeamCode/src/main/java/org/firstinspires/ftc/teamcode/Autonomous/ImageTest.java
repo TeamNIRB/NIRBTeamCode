@@ -133,27 +133,27 @@ public class ImageTest extends OpMode
             Imgproc.cvtColor(input, YCbCr, Imgproc.COLOR_RGB2HSV);
 
             Rect leftRect = new Rect(1, 1, 424, 719);
-            //Rect middleRect = new Rect(425, 1, 424, 719);
+            Rect middleRect = new Rect(425, 1, 424, 719);
             Rect rightRect = new Rect(850, 1, 424, 719);
 
             input.copyTo(outPut);
 
             Imgproc.rectangle(outPut, leftRect, color, 2);
-            //Imgproc.rectangle(outPut, middleRect, color, 2);
+            Imgproc.rectangle(outPut, middleRect, color, 2);
             Imgproc.rectangle(outPut, rightRect, color, 2);
 
 
             Mat leftCrop = YCbCr.submat(leftRect);
-            //Mat middleCrop = YCbCr.submat(middleRect);
+            Mat middleCrop = YCbCr.submat(middleRect);
             Mat rightCrop = YCbCr.submat(rightRect);
 
             Core.extractChannel(leftCrop, leftCrop, 2);
-            //Core.extractChannel(middleCrop, middleCrop, 2);
+            Core.extractChannel(middleCrop, middleCrop, 2);
             Core.extractChannel(rightCrop, rightCrop, 2);
 
 
             Scalar leftavg = Core.mean(leftCrop);
-            //Scalar midavg = Core.mean(middleCrop);
+            Scalar midavg = Core.mean(middleCrop);
             Scalar rightavg = Core.mean(rightCrop);
 
 
@@ -162,8 +162,12 @@ public class ImageTest extends OpMode
             {
                 telemetry.addData("leftVal", (int)leftavg.val[0]);
                 telemetry.addData("rightVal", (int)rightavg.val[0]);
+                
                 isLeft = true;
                 telemetry.addData("Left", isLeft);
+
+                isMiddle = false;
+                isRight = false;
 
             }
 
@@ -175,14 +179,31 @@ public class ImageTest extends OpMode
 
                 isRight = true;
                 telemetry.addData("Right", isRight);
-            }
 
+                isMiddle = false;
+                isLeft = false;
+            }
+            
+            //check middle
+            if((int)(midavg.val[0]) > (int)(leftavg.val[0]) || (int)(midavg.val[0]) > (int)(rightavg.val[0]))
+            {
+                telemetry.addData("leftVal", (int) leftavg.val[0]);
+                telemetry.addData("rightVal", (int) rightavg.val[0]);
+                
+                isMiddle = true;
+                telemetry.addData("Middle", isMiddle);
+
+                isRight = false;
+                isLeft = false;
+            }
 
             else
             {
-                isLeft = false;
+                isMiddle = false;
                 isRight = false;
+                isLeft = false;
             }
+            
 
 
             return(outPut);
