@@ -1,3 +1,4 @@
+
 package org.firstinspires.ftc.teamcode.Autonomous;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -35,6 +36,20 @@ public class ImageTest extends OpMode
     private final int camWidth = 1080;
     private final int camHeight = 720;
 
+    public void autonomousLeft()
+    {
+        //fill with autonomous script.
+    }
+
+    public void autonomousMid()
+    {
+        //fill with autonomous script.
+    }
+
+    public void autonomousRight()
+    {
+        //fill with autonomous script.
+    }
     public void setup()
     {
         BackLeft = hardwareMap.get(DcMotor.class, "BackLeft");
@@ -70,7 +85,7 @@ public class ImageTest extends OpMode
                                       @Override
                                       public void onOpened()
                                       {
-                                          cam.startStreaming(1280, 720, OpenCvCameraRotation.UPRIGHT);
+                                          cam.startStreaming(1280, 720, OpenCvCameraRotation.UPSIDE_DOWN);
                                       }
 
                                       @Override
@@ -87,6 +102,21 @@ public class ImageTest extends OpMode
     public void loop()
     {
 
+        if(isMiddle)
+        {
+            autonomousMid();
+        }
+
+        if(isLeft)
+        {
+            autonomousLeft();
+        }
+
+        if(isRight)
+        {
+            autonomousRight();
+        }
+
     }
 
 
@@ -99,45 +129,62 @@ public class ImageTest extends OpMode
 
         public Mat processFrame(Mat input)
         {
-            Imgproc.cvtColor(input, YCbCr, Imgproc.COLOR_RGB2HSV);
-            //https://www.youtube.com/watch?v=547ZUZiYfQE
 
-            Rect leftRect = new Rect(1, 1, 639, 719);
-            Rect rightRect = new Rect(640, 1, 639, 719);
+            Imgproc.cvtColor(input, YCbCr, Imgproc.COLOR_RGB2HSV);
+
+            Rect leftRect = new Rect(1, 1, 424, 719);
+            //Rect middleRect = new Rect(425, 1, 424, 719);
+            Rect rightRect = new Rect(850, 1, 424, 719);
 
             input.copyTo(outPut);
+
             Imgproc.rectangle(outPut, leftRect, color, 2);
+            //Imgproc.rectangle(outPut, middleRect, color, 2);
             Imgproc.rectangle(outPut, rightRect, color, 2);
 
+
             Mat leftCrop = YCbCr.submat(leftRect);
+            //Mat middleCrop = YCbCr.submat(middleRect);
             Mat rightCrop = YCbCr.submat(rightRect);
 
             Core.extractChannel(leftCrop, leftCrop, 2);
+            //Core.extractChannel(middleCrop, middleCrop, 2);
             Core.extractChannel(rightCrop, rightCrop, 2);
 
+
             Scalar leftavg = Core.mean(leftCrop);
+            //Scalar midavg = Core.mean(middleCrop);
             Scalar rightavg = Core.mean(rightCrop);
 
 
-
-            if(leftavg.val[0] > rightavg.val[0])
+            //check left
+            if( (int) (leftavg.val[0]) > (int) (rightavg.val[0]) )
             {
+                telemetry.addData("leftVal", (int)leftavg.val[0]);
+                telemetry.addData("rightVal", (int)rightavg.val[0]);
                 isLeft = true;
                 telemetry.addData("Left", isLeft);
+
             }
-            
-            if(rightavg.val[0] > leftavg.val[0])
+
+            //check right
+            if((int) (rightavg.val[0]) > (int) (leftavg.val[0]))
             {
+                telemetry.addData("leftVal", (int) leftavg.val[0]);
+                telemetry.addData("rightVal", (int) rightavg.val[0]);
+
                 isRight = true;
                 telemetry.addData("Right", isRight);
             }
-            
+
+
             else
             {
                 isLeft = false;
-                isRight =false;
+                isRight = false;
             }
-            
+
+
             return(outPut);
         }
     }
