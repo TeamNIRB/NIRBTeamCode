@@ -1,8 +1,7 @@
-//NIRB Team main drive program -- Mecanum Drive; Pivot Arm; Vertical Griper
+package org.firstinspires.ftc.teamcode.Autonomous;
 
 //Imports
 
-package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -14,16 +13,6 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 public class TestDrivev2 extends LinearOpMode
 {
-
-    /*
-
-        FL   FR
-        ||___||   rurbote
-        | ___ |
-        ||   ||
-        BL   BR
-
-     */
 
     double motorSpeed; // controls the speed of the robot
 
@@ -111,6 +100,7 @@ public class TestDrivev2 extends LinearOpMode
     // top position is zero position
     final double servoRotateTop = 0.3;
     final double servoRotateBottom = 0.96;
+    final double servoDroneLaunchPosition = 0.65;
 
 
 
@@ -121,6 +111,16 @@ public class TestDrivev2 extends LinearOpMode
     int slideStatus = 1; //1=drive 2=pre-hang 3=hang
     int isHanging = 0;
     int clawPositionStatus = 0;
+
+
+
+    //lower number = less pressure required to reach level
+    final double lowSpeedPressure = 0.55;
+    final double medSpeedPressure = 0.15;
+
+    final double lowDriveSpeed = 0.2;
+    final double medDriveSpeed = 0.35;
+    final double highDriveSpeed = 0.55;
 
     public void claw()
     {
@@ -365,7 +365,7 @@ public class TestDrivev2 extends LinearOpMode
         driveRightTrigger = (gamepad1.right_trigger);
 
 
-        motorSpeed = 0.5;
+
         BackLeft.setPower((driveLeftStickY + driveLeftStickX - driveRightStickX) * motorSpeed);
         FrontLeft.setPower((driveLeftStickY - driveLeftStickX - driveRightStickX) * motorSpeed);
         BackRight.setPower((driveLeftStickY - driveLeftStickX + driveRightStickX) * motorSpeed);
@@ -374,14 +374,35 @@ public class TestDrivev2 extends LinearOpMode
 
         if (driveRightBumper == 1)
         {
-            DroneLauncher.setPosition(0.3);
+            DroneLauncher.setPosition(servoDroneLaunchPosition);
         }
 
+        //low speed
+        if(driveRightTrigger >= lowSpeedPressure && driveRightTrigger <= 1.0)
+        {
+            motorSpeed = lowDriveSpeed;
+        }
+
+        //med speed
+        else if(driveRightTrigger >= medSpeedPressure && driveRightTrigger < lowSpeedPressure)
+        {
+            motorSpeed = medDriveSpeed;
+        }
+
+        else
+        {
+            motorSpeed = highDriveSpeed;
+        }
+
+
+
+        /*
         // divides motor speed by  2 if right trigger is pressed enough
         if (driveRightTrigger >= 0.4)
         {
             motorSpeed /= 2;
         }
+
 
         // scales motor speed by right trigger pressure
         if (motorSpeed> 0.0)
@@ -393,9 +414,13 @@ public class TestDrivev2 extends LinearOpMode
             motorSpeed = 0.1;
         }
 
+         */
+
     }
 
-    public void telemetrys()
+
+    //press ctrl shift . Or right click in between {  } and click "Folding" and "Fold code block" to hide telemetry1 and initialize.
+    public void telemetry1()
     {
 
         telemetry.addData("SlideLeft", SlideLeft.getCurrentPosition());
@@ -407,17 +432,15 @@ public class TestDrivev2 extends LinearOpMode
         telemetry.addData("Rotate", RotateServo.getPosition());
         telemetry.addData("Claw1", ClawServo1.getPosition());
         telemetry.addData("Claw2", ClawServo2.getPosition());
+        telemetry.addData("right trigger", driveRightTrigger);
+        telemetry.addData("speed", motorSpeed);
 
         telemetry.update();
 
     }
 
-
-
-    @Override
-    public void runOpMode()
+    public void initialize()
     {
-
         // setting motor hardware to variables
         BackLeft = hardwareMap.get(DcMotor.class, "BackLeft");
         BackRight = hardwareMap.get(DcMotor.class, "BackRight");
@@ -473,8 +496,15 @@ public class TestDrivev2 extends LinearOpMode
         ClawServo2.setPosition(servoClaw2Open);
         ClawServo1.setPosition(servoClaw1Open);
         PivotServo.setPosition(servoPivotGrabPosition);
+    }
 
 
+
+    @Override
+    public void runOpMode()
+    {
+
+        initialize();
 
         while(opModeIsActive())
         {
@@ -482,7 +512,7 @@ public class TestDrivev2 extends LinearOpMode
             mecanum();
             claw();
             slide();
-            telemetrys();
+            telemetry1();
 
         }
 
