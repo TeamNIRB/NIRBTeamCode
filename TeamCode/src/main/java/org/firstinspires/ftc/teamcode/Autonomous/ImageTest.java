@@ -16,6 +16,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 @Autonomous
@@ -35,6 +36,8 @@ public class ImageTest extends OpMode
 
     private final int camWidth = 1080;
     private final int camHeight = 720;
+
+    private ElapsedTime runtime = new ElapsedTime();
 
     public void autonomousLeft()
     {
@@ -157,55 +160,30 @@ public class ImageTest extends OpMode
             Scalar rightavg = Core.mean(rightCrop);
 
 
-            //check left
+                //check left
             if( (int) (leftavg.val[0]) > (int) (rightavg.val[0]) )
             {
                 telemetry.addData("leftVal", (int)leftavg.val[0]);
                 telemetry.addData("rightVal", (int)rightavg.val[0]);
-                
                 isLeft = true;
                 telemetry.addData("Left", isLeft);
-
-                isMiddle = false;
-                isRight = false;
-
             }
 
-            //check right
+                //check right
             if((int) (rightavg.val[0]) > (int) (leftavg.val[0]))
             {
                 telemetry.addData("leftVal", (int) leftavg.val[0]);
                 telemetry.addData("rightVal", (int) rightavg.val[0]);
-
                 isRight = true;
                 telemetry.addData("Right", isRight);
-
-                isMiddle = false;
-                isLeft = false;
             }
-            
-            //check middle
-            if((int)(midavg.val[0]) > (int)(leftavg.val[0]) || (int)(midavg.val[0]) > (int)(rightavg.val[0]))
+
+                //check middle
+            if((int)(midavg.val[0]) > (int) leftavg.val[0] && (int) (midavg.val[0]) > (int) (rightavg.val[0]))
             {
-                telemetry.addData("leftVal", (int) leftavg.val[0]);
-                telemetry.addData("rightVal", (int) rightavg.val[0]);
-                
                 isMiddle = true;
                 telemetry.addData("Middle", isMiddle);
-
-                isRight = false;
-                isLeft = false;
             }
-
-            else
-            {
-                isMiddle = false;
-                isRight = false;
-                isLeft = false;
-            }
-            
-
-
             return(outPut);
         }
     }
