@@ -9,6 +9,8 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
+import java.io.PipedOutputStream;
+
 @TeleOp
 
 public class TestDrivev2 extends LinearOpMode
@@ -56,6 +58,7 @@ public class TestDrivev2 extends LinearOpMode
     int driveButtonB;
     int driveRightBumper;
     float driveRightTrigger;
+    float driveLeftTrigger;
 
 
     // defining variables for the arm controller
@@ -110,8 +113,11 @@ public class TestDrivev2 extends LinearOpMode
     int activeClaw = 1;
     int slideStatus = 1; //1=drive 2=pre-hang 3=hang
     int isHanging = 0;
-    int clawPositionStatus = 0;
+    int clawPositionStatus = 0;//0=grab 1=rotate
 
+    boolean activeX = false;
+
+    int clawXPosition;
 
 
     //lower number = less pressure required to reach level
@@ -128,7 +134,7 @@ public class TestDrivev2 extends LinearOpMode
         armLeftBumper = (gamepad2.left_bumper) ? 1 : 0;
         armButtonA = (gamepad2.a) ? 1 : 0;
         armButtonB = (gamepad2.b) ? 1 : 0;
-        armButtonX = (gamepad2.x) ? 1 : 0;
+        boolean armX = (gamepad2.x);
         armButtonY = (gamepad2.y) ? 1 : 0;
 
         // bottom claw
@@ -160,12 +166,14 @@ public class TestDrivev2 extends LinearOpMode
         //change active claw
         if(slideStatus == 1)
         {
+
             if(clawPositionStatus == 0 & armButtonY == 1)
             {
                 PivotServo.setPosition(servoPivotRotatePosition);
                 clawPositionStatus = 1;
                 timeStart = System.currentTimeMillis();
             }
+
 
             else if(clawPositionStatus == 1 & System.currentTimeMillis() >= (timeStart + 300))
             {
@@ -214,10 +222,18 @@ public class TestDrivev2 extends LinearOpMode
                 }
 
             }
-
+        }
+        else
+        {
+            PivotServo.setPosition(servoPivotGrabPosition);
         }
 
-        else
+
+        if(armX)
+        {
+            PivotServo.setPosition(servoPivotRotatePosition);
+        }
+        if(armButtonA == 1)
         {
             PivotServo.setPosition(servoPivotGrabPosition);
         }
@@ -302,12 +318,14 @@ public class TestDrivev2 extends LinearOpMode
         {
             armButtonXStatus = 0;
         }
-
+        
+        /*
         if (armButtonA == 1)
         {
             slideTickPosition = 500;
             slideStatus = 3;
         }
+        */
 
         else if(slideStatus == 3)
         {
@@ -363,6 +381,7 @@ public class TestDrivev2 extends LinearOpMode
         driveButtonY = (gamepad1.y) ? 1 : 0;
         driveRightBumper = (gamepad1.right_bumper) ? 1 : 0;
         driveRightTrigger = (gamepad1.right_trigger);
+        driveLeftTrigger = (gamepad1.left_trigger);
 
 
 
@@ -377,6 +396,18 @@ public class TestDrivev2 extends LinearOpMode
             DroneLauncher.setPosition(servoDroneLaunchPosition);
         }
 
+        motorSpeed = 1.0;
+        if(driveLeftTrigger >= 0.2)
+        {
+            motorSpeed *= 0.2;
+        }
+
+        if(driveRightTrigger >= 0.2)
+        {
+            motorSpeed *= 0.5;
+        }
+
+        /*
         //low speed
         if(driveRightTrigger >= lowSpeedPressure && driveRightTrigger <= 1.0)
         {
@@ -394,27 +425,8 @@ public class TestDrivev2 extends LinearOpMode
             motorSpeed = highDriveSpeed;
         }
 
+        */
 
-
-        /*
-        // divides motor speed by  2 if right trigger is pressed enough
-        if (driveRightTrigger >= 0.4)
-        {
-            motorSpeed /= 2;
-        }
-
-
-        // scales motor speed by right trigger pressure
-        if (motorSpeed> 0.0)
-        {
-            motorSpeed += (driveRightTrigger * -1);
-        }
-        else
-        {
-            motorSpeed = 0.1;
-        }
-
-         */
 
     }
 
@@ -433,7 +445,6 @@ public class TestDrivev2 extends LinearOpMode
         telemetry.addData("Claw1", ClawServo1.getPosition());
         telemetry.addData("Claw2", ClawServo2.getPosition());
         telemetry.addData("right trigger", driveRightTrigger);
-        telemetry.addData("speed", motorSpeed);
 
         telemetry.update();
 
