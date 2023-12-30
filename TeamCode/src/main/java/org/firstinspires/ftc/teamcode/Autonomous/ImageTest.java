@@ -37,6 +37,10 @@ public class ImageTest extends OpMode
     private final int camWidth = 1080;
     private final int camHeight = 720;
 
+    private final int leftVariance = 0;
+    private final int middleVariance = 0;
+    private final int rightVariance = 0;
+
     private ElapsedTime runtime = new ElapsedTime();
 
     public void autonomousLeft()
@@ -161,7 +165,7 @@ public class ImageTest extends OpMode
 
 
                 //check left
-            if( (int) (leftavg.val[0]) > (int) (rightavg.val[0]) )
+            if( (int) (leftavg.val[0] - leftVariance) > (int) (rightavg.val[0] - rightVariance) )
             {
                 telemetry.addData("leftVal", (int)leftavg.val[0]);
                 telemetry.addData("rightVal", (int)rightavg.val[0]);
@@ -170,7 +174,7 @@ public class ImageTest extends OpMode
             }
 
                 //check right
-            if((int) (rightavg.val[0]) > (int) (leftavg.val[0]))
+            if((int) (rightavg.val[0] - rightVariance) > (int) (leftavg.val[0] - leftVariance))
             {
                 telemetry.addData("leftVal", (int) leftavg.val[0]);
                 telemetry.addData("rightVal", (int) rightavg.val[0]);
@@ -179,7 +183,7 @@ public class ImageTest extends OpMode
             }
 
                 //check middle
-            if((int)(midavg.val[0]) > (int) leftavg.val[0] && (int) (midavg.val[0]) > (int) (rightavg.val[0]))
+            if((int)(midavg.val[0] - middleVariance) > (int) (leftavg.val[0] - leftVariance) && (int) (midavg.val[0] - middleVariance) > (int) (rightavg.val[0] - rightVariance))
             {
                 isMiddle = true;
                 telemetry.addData("Middle", isMiddle);
