@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Autonomous;
+package org.firstinspires.ftc.teamcode.Teleop;
 
 //Imports
 
@@ -8,8 +8,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-
-import java.io.PipedOutputStream;
 
 @TeleOp
 
@@ -71,6 +69,8 @@ public class TestDrivev2 extends LinearOpMode
     int armButtonY;
     float armRightBumper;
     float armLeftBumper;
+
+    float armLeftTrigger;
 
     int armButtonXStatus = 0; //determines if button X was pressed
     int armButtonYStatus = 0; //determines if button Y was pressed
@@ -245,6 +245,7 @@ public class TestDrivev2 extends LinearOpMode
 
         armRightStickY = gamepad2.right_stick_y;
         armLeftStickY = gamepad2.left_stick_y;
+        armLeftTrigger = gamepad2.left_trigger;
         driveButtonA = (gamepad2.y) ? 1 : 0;
 
         if(armRightStickY < 0)  // Up
@@ -318,7 +319,7 @@ public class TestDrivev2 extends LinearOpMode
         {
             armButtonXStatus = 0;
         }
-        
+
         /*
         if (armButtonA == 1)
         {
@@ -366,6 +367,15 @@ public class TestDrivev2 extends LinearOpMode
 
             }
 
+        }
+
+        if(armLeftTrigger >= 0.3)
+        {
+            SlideLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            SlideRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+            SlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            SlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         }
 
     }
