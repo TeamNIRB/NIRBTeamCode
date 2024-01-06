@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
 
+
 import static com.qualcomm.hardware.rev.RevHubOrientationOnRobot.xyzOrientation;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
@@ -179,7 +180,35 @@ public class AutonomousRedFar extends OpMode
 
         else if(direction.equalsIgnoreCase("turnleft"))
         {
-            targetAngle = gyroAngle - (inches * ticks_to_inch);
+            targetBack = PodBack.getCurrentPosition() + (int)(inches * (2800/90));
+
+            //PodBack.setTargetPosition(targetBack);
+            boolean running = true;
+
+
+            //PodBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            //PodBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+            FrontLeft.setPower(-0.2);
+            FrontRight.setPower(0.2);
+            BackLeft.setPower(-0.2);
+            BackRight.setPower(0.2);
+
+            while(targetBack > PodBack.getCurrentPosition())
+            {
+                telemetry.addData("target", targetBack);
+                telemetry.addData("angle", PodBack.getCurrentPosition());
+
+
+
+                telemetry.update();
+            }
+
+            FrontLeft.setPower(0.0);
+            FrontRight.setPower(0.0);
+            BackLeft.setPower(0.0);
+            BackRight.setPower(0.0);
+            /*
             if (gyroAngle > (targetAngle + 8))
             {
                 FrontLeft.setPower(-0.3);
@@ -203,11 +232,49 @@ public class AutonomousRedFar extends OpMode
                 BackRight.setPower(0);
 
             }
-        }
+            targetAngle = 0;
+            */
 
+        }
         else if(direction.equalsIgnoreCase("turnright"))
         {
-            targetAngle = gyroAngle + (inches * ticks_to_inch);
+
+            targetBack = PodBack.getCurrentPosition() - (int)(inches * (2800/90));
+
+            //PodBack.setTargetPosition(targetBack);
+            boolean running = true;
+
+
+            //PodBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            //PodBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+            FrontLeft.setPower(0.2);
+            FrontRight.setPower(-0.2);
+            BackLeft.setPower(0.2);
+            BackRight.setPower(-0.2);
+
+            while(targetBack < PodBack.getCurrentPosition())
+            {
+                telemetry.addData("target", targetBack);
+                telemetry.addData("angle", PodBack.getCurrentPosition());
+
+
+
+                telemetry.update();
+            }
+
+            FrontLeft.setPower(0.0);
+            FrontRight.setPower(0.0);
+            BackLeft.setPower(0.0);
+            BackRight.setPower(0.0);
+
+
+            /*
+            if(targetAngle == 0)
+            {
+                targetAngle = gyroAngle + (inches * ticks_to_inch);
+            }
+
 
             if (gyroAngle > targetAngle - 1)
             {
@@ -230,7 +297,10 @@ public class AutonomousRedFar extends OpMode
                 BackLeft.setPower(0);
                 BackRight.setPower(0);
             }
+
+             */
         }
+        targetAngle = 0;
 
         //telemetry.addData("podleft", PodLeft.getCurrentPosition());
         //telemetry.addData("target", PodLeft.getTargetPosition());
@@ -252,16 +322,22 @@ public class AutonomousRedFar extends OpMode
 
     public void autonomousMid()
     {
-        //drive(5, 0.5);
-        telemetry.addLine("running middle");
-        sleep(2000);
-        telemetry.addLine("sleep");
+        drive("forward", 5, 0.5);
+        drive("right", 3, 0.5);
+        drive("forward", 12, 0.5);
 
+        PivotServo.setPosition(servoPivotGrabPosition);
+        sleep(500);
+        ClawServo1.setPosition(servoClaw1Open);
     }
 
     public void autonomousRight()
     {
-        //fill with autonomous script.
+        drive("forward", 12, 0.5);
+        drive("right", 8, 0.5);
+        PivotServo.setPosition(servoPivotGrabPosition);
+        sleep(500);
+        ClawServo1.setPosition(servoClaw1Open);
     }
     public void setup()
     {
@@ -341,9 +417,11 @@ public class AutonomousRedFar extends OpMode
 
         cam.closeCameraDevice();
         telemetry.addData(("propPosition"), propPosition);
+        //FrontLeft.setPower(-0.2);
+        //FrontRight.setPower(0.2);
+        //BackLeft.setPower(-0.2);
+        //BackRight.setPower(0.2);
 
-        drive("left", 20, 0.5);
-        /*
 
         if(propPosition.equalsIgnoreCase("left"))
         {
@@ -360,14 +438,13 @@ public class AutonomousRedFar extends OpMode
             autonomousRight();
         }
 
-
-         */
     }
 
     public void loop()
     {
         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
         gyroAngle = orientation.getYaw(AngleUnit.DEGREES);
+        telemetry.addData("gyroangle", gyroAngle);
     }
 
 
@@ -416,7 +493,7 @@ public class AutonomousRedFar extends OpMode
                 middleColorValue = (int)leftavg.val[0];
                 rightColorValue = (int)rightavg.val[0];
             }
-            else if (middleColorValue > (int) leftavg.val[0] + 5)
+            else if ((middleColorValue < (int) leftavg.val[0] + 5) && (middleColorValue > (int) leftavg.val[0] - 5))
             {
                 propPosition = "Middle";
             }
