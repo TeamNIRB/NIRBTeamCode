@@ -320,13 +320,13 @@ public class TestDrivev2 extends LinearOpMode
             armButtonXStatus = 0;
         }
 
-        /*
+
         if (armButtonA == 1)
         {
             slideTickPosition = 500;
             slideStatus = 3;
         }
-        */
+
 
         else if(slideStatus == 3)
         {
@@ -526,6 +526,7 @@ public class TestDrivev2 extends LinearOpMode
     {
 
         initialize();
+        DroneLauncher.setPosition(0);
 
         while(opModeIsActive())
         {
