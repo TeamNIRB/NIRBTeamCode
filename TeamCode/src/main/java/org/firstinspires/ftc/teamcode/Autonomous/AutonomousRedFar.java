@@ -42,32 +42,32 @@ public class AutonomousRedFar extends OpMode
     private IMU imu;
 
     double gyroAngle;
-    double targetAngle;
+    double gyroTargetAngle;
 
-    private DcMotor BackLeft;
-    private DcMotor FrontLeft;
-    private DcMotor BackRight;
-    private DcMotor FrontRight;
+    private DcMotor motorBackLeft;
+    private DcMotor motorFrontLeft;
+    private DcMotor motorBackRight;
+    private DcMotor motorFrontRight;
 
     private static final boolean USE_WEBCAM = true;  // true for webcam, false for phone camera
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
 
 
-    private DcMotor PodLeft;
-    private DcMotor PodBack;
-    private DcMotor PodRight;
+    private DcMotor odometryPodLeft;
+    private DcMotor odometryPodBack;
+    private DcMotor odometryPodRight;
 
-    private Servo ClawServo1;
-    private Servo ClawServo2;
-    private Servo RotateServo;
-    private Servo PivotServo;
+    private Servo servoClaw1;
+    private Servo servoClaw2;
+    private Servo servoRotate;
+    private Servo servoPivot;
 
 
     public String propPosition = "Unknown";
 
-    public int middleColorValue = 0;
-    public int rightColorValue = 0;
+    public int colorMiddleValue = 0;
+    public int colorRightValue = 0;
 
 
     private final int camWidth = 1080;
@@ -89,223 +89,145 @@ public class AutonomousRedFar extends OpMode
     public final int ticks_to_inch = 336;
 
 
-    double xRotation = -90;  // enter the desired X rotation angle here.
-    double yRotation = -34;  // enter the desired Y rotation angle here.
-    double zRotation = 180;  // enter the desired Z rotation angle here.
+    double rotationX = -90;  // enter the desired X rotation angle here.
+    double rotationY = -34;  // enter the desired Y rotation angle here.
+    double rotationZ = 180;  // enter the desired Z rotation angle here.
 
-    public void drive(String direction, int inches, double speed)
+    public void DriveRobot(String driveDirection, int driveDistance, double driveSpeed)
     {
         int targetLeft;
         int targetBack;
 
-        targetLeft = PodLeft.getCurrentPosition() + (int)(inches * ticks_to_inch);
-        targetBack = PodBack.getCurrentPosition() + (int)(inches * ticks_to_inch);
+        targetLeft = odometryPodLeft.getCurrentPosition() + (int)(driveDistance * ticks_to_inch);
+        targetBack = odometryPodBack.getCurrentPosition() + (int)(driveDistance * ticks_to_inch);
 
-        PodLeft.setTargetPosition(targetLeft);
-        PodBack.setTargetPosition(targetBack);
+        odometryPodLeft.setTargetPosition(targetLeft);
+        odometryPodBack.setTargetPosition(targetBack);
 
-        if(direction.equalsIgnoreCase("forward"))
+        if(driveDirection.equalsIgnoreCase("forward"))
         {
-            while(PodLeft.getCurrentPosition() < PodLeft.getTargetPosition())
+            while(odometryPodLeft.getCurrentPosition() < odometryPodLeft.getTargetPosition())
             {
-                FrontRight.setPower(speed);
-                FrontLeft.setPower(speed);
-                BackRight.setPower(speed);
-                BackLeft.setPower(speed);
+                motorFrontRight.setPower(driveSpeed);
+                motorFrontLeft.setPower(driveSpeed);
+                motorBackRight.setPower(driveSpeed);
+                motorBackLeft.setPower(driveSpeed);
             }
 
+            motorFrontRight.setPower(0);
+            motorFrontLeft.setPower(0);
+            motorBackLeft.setPower(0);
+            motorBackRight.setPower(0);
+        }
+        else if(driveDirection.equalsIgnoreCase("backward"))
+        {
+            driveSpeed *= -1;
+            while(odometryPodLeft.getCurrentPosition() > odometryPodLeft.getTargetPosition())
+            {
+                motorFrontRight.setPower(driveSpeed);
+                motorFrontLeft.setPower(driveSpeed);
+                motorBackRight.setPower(driveSpeed);
+                motorBackLeft.setPower(driveSpeed);
+            }
 
-            FrontRight.setPower(0);
-            FrontLeft.setPower(0);
-            BackLeft.setPower(0);
-            BackRight.setPower(0);
+            motorFrontRight.setPower(0);
+            motorFrontLeft.setPower(0);
+            motorBackLeft.setPower(0);
+            motorBackRight.setPower(0);
+        }
+        else if(driveDirection.equalsIgnoreCase("left"))
+        {
+            targetBack = odometryPodBack.getCurrentPosition() + (int)((driveDistance * -1) * ticks_to_inch);
+            odometryPodBack.setTargetPosition(targetBack);
+
+            while(odometryPodBack.getCurrentPosition() > odometryPodBack.getTargetPosition())
+            {
+                motorFrontRight.setPower(driveSpeed);
+                motorFrontLeft.setPower(driveSpeed * -1);
+                motorBackRight.setPower(driveSpeed * -1);
+                motorBackLeft.setPower(driveSpeed);
+            }
+
+            motorFrontRight.setPower(0);
+            motorFrontLeft.setPower(0);
+            motorBackLeft.setPower(0);
+            motorBackRight.setPower(0);
         }
 
-        else if(direction.equalsIgnoreCase("backward"))
+        else if(driveDirection.equalsIgnoreCase("right"))
         {
-            speed *= -1;
-            while(PodLeft.getCurrentPosition() < PodLeft.getTargetPosition())
+            targetBack = odometryPodBack.getCurrentPosition() + (int)(driveDistance * ticks_to_inch);
+            odometryPodBack.setTargetPosition(targetBack);
+
+            while(odometryPodBack.getCurrentPosition() < odometryPodBack.getTargetPosition())
             {
-                FrontRight.setPower(speed);
-                FrontLeft.setPower(speed);
-                BackRight.setPower(speed);
-                BackLeft.setPower(speed);
+                motorFrontRight.setPower(driveSpeed * -1);
+                motorFrontLeft.setPower(driveSpeed);
+                motorBackRight.setPower(driveSpeed);
+                motorBackLeft.setPower(driveSpeed * -1);
             }
 
-            FrontRight.setPower(0);
-            FrontLeft.setPower(0);
-            BackLeft.setPower(0);
-            BackRight.setPower(0);
+            motorFrontRight.setPower(0);
+            motorFrontLeft.setPower(0);
+            motorBackLeft.setPower(0);
+            motorBackRight.setPower(0);
         }
-        else if(direction.equalsIgnoreCase("left"))
-        {
-            targetBack = PodBack.getCurrentPosition() + (int)((inches * -1) * ticks_to_inch);
-            PodBack.setTargetPosition(targetBack);
-
-
-            while(PodBack.getCurrentPosition() > PodBack.getTargetPosition())
-            {
-                FrontRight.setPower(speed);
-                FrontLeft.setPower(speed * -1);
-                BackRight.setPower(speed * -1);
-                BackLeft.setPower(speed);
-
-            }
-
-            FrontRight.setPower(0);
-            FrontLeft.setPower(0);
-            BackLeft.setPower(0);
-            BackRight.setPower(0);
-        }
-
-        else if(direction.equalsIgnoreCase("right"))
-        {
-            targetBack = PodBack.getCurrentPosition() + (int)(inches * ticks_to_inch);
-            PodBack.setTargetPosition(targetBack);
-
-            while(PodBack.getCurrentPosition() < PodBack.getTargetPosition())
-            {
-                FrontRight.setPower(speed * -1);
-                FrontLeft.setPower(speed);
-                BackRight.setPower(speed);
-                BackLeft.setPower(speed * -1);
-
-            }
-
-            FrontRight.setPower(0);
-            FrontLeft.setPower(0);
-            BackLeft.setPower(0);
-            BackRight.setPower(0);
-        }
-
-        else if(direction.equalsIgnoreCase("turnleft"))
-        {
-            targetBack = PodBack.getCurrentPosition() + (int)(inches * (2800/90));
-
-            //PodBack.setTargetPosition(targetBack);
-            boolean running = true;
-
-
-            //PodBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            //PodBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-            FrontLeft.setPower(-0.2);
-            FrontRight.setPower(0.2);
-            BackLeft.setPower(-0.2);
-            BackRight.setPower(0.2);
-
-            while(targetBack > PodBack.getCurrentPosition())
-            {
-                telemetry.addData("target", targetBack);
-                telemetry.addData("angle", PodBack.getCurrentPosition());
-
-
-
-                telemetry.update();
-            }
-
-            FrontLeft.setPower(0.0);
-            FrontRight.setPower(0.0);
-            BackLeft.setPower(0.0);
-            BackRight.setPower(0.0);
-            /*
-            if (gyroAngle > (targetAngle + 8))
-            {
-                FrontLeft.setPower(-0.3);
-                FrontRight.setPower(0.3);
-                BackLeft.setPower(-0.3);
-                BackRight.setPower(0.3);
-            }
-
-            else if (gyroAngle > targetAngle + 1)
-            {
-                FrontLeft.setPower(-0.1);
-                FrontRight.setPower(0.1);
-                BackLeft.setPower(-0.1);
-                BackRight.setPower(0.1);
-            }
-            else
-            {
-                FrontLeft.setPower(0);
-                FrontRight.setPower(0);
-                BackLeft.setPower(0);
-                BackRight.setPower(0);
-
-            }
-            targetAngle = 0;
-            */
-
-        }
-        else if(direction.equalsIgnoreCase("turnright"))
-        {
-
-            targetBack = PodBack.getCurrentPosition() - (int)(inches * (2800/90));
-
-            //PodBack.setTargetPosition(targetBack);
-            boolean running = true;
-
-
-            //PodBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            //PodBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-            FrontLeft.setPower(0.2);
-            FrontRight.setPower(-0.2);
-            BackLeft.setPower(0.2);
-            BackRight.setPower(-0.2);
-
-            while(targetBack < PodBack.getCurrentPosition())
-            {
-                telemetry.addData("target", targetBack);
-                telemetry.addData("angle", PodBack.getCurrentPosition());
-
-
-
-                telemetry.update();
-            }
-
-            FrontLeft.setPower(0.0);
-            FrontRight.setPower(0.0);
-            BackLeft.setPower(0.0);
-            BackRight.setPower(0.0);
-
-
-            /*
-            if(targetAngle == 0)
-            {
-                targetAngle = gyroAngle + (inches * ticks_to_inch);
-            }
-
-
-            if (gyroAngle > targetAngle - 1)
-            {
-                FrontLeft.setPower(0.1);
-                FrontRight.setPower(-0.1);
-                BackLeft.setPower(0.1);
-                BackRight.setPower(-0.1);
-            }
-            else if (gyroAngle > targetAngle - 8)
-            {
-                FrontLeft.setPower(0.8);
-                FrontRight.setPower(-0.8);
-                BackLeft.setPower(0.8);
-                BackRight.setPower(-0.8);
-            }
-            else
-            {
-                FrontLeft.setPower(0);
-                FrontRight.setPower(0);
-                BackLeft.setPower(0);
-                BackRight.setPower(0);
-            }
-
-             */
-        }
-        targetAngle = 0;
-
-        //telemetry.addData("podleft", PodLeft.getCurrentPosition());
-        //telemetry.addData("target", PodLeft.getTargetPosition());
     }
 
+    public void TurnRobot(String turnDirection, int turnAngle, double turnSpeed)
+    {
+        int targetLeft;
+        int targetBack;
+
+        int ticksPerDegree = 32;
+
+        if(turnDirection.equalsIgnoreCase("counter")) // Counter Clockwise
+        {
+            targetBack = odometryPodBack.getCurrentPosition() + (int)(turnAngle * ticksPerDegree);
+
+            motorFrontLeft.setPower(-1 * turnSpeed);
+            motorFrontRight.setPower(turnSpeed);
+            motorBackLeft.setPower(-1 * turnSpeed);
+            motorBackRight.setPower(turnSpeed);
+
+            while(targetBack > odometryPodBack.getCurrentPosition())
+            {
+                telemetry.addData("target", targetBack);
+                telemetry.addData("current", odometryPodBack.getCurrentPosition());
+
+                telemetry.update();
+            }
+
+            motorFrontLeft.setPower(0.0);
+            motorFrontRight.setPower(0.0);
+            motorBackLeft.setPower(0.0);
+            motorBackRight.setPower(0.0);
+        }
+        else if(turnDirection.equalsIgnoreCase("clockwise"))
+        {
+            targetBack = odometryPodBack.getCurrentPosition() - (int)(turnAngle * ticksPerDegree);
+
+            motorFrontLeft.setPower(turnSpeed);
+            motorFrontRight.setPower(-1 * turnSpeed);
+            motorBackLeft.setPower(turnSpeed);
+            motorBackRight.setPower(-1 * turnSpeed);
+
+            while(targetBack < odometryPodBack.getCurrentPosition())
+            {
+                telemetry.addData("target", targetBack);
+                telemetry.addData("current", odometryPodBack.getCurrentPosition());
+
+                telemetry.update();
+            }
+
+            motorFrontLeft.setPower(0.0);
+            motorFrontRight.setPower(0.0);
+            motorBackLeft.setPower(0.0);
+            motorBackRight.setPower(0.0);
+
+            sleep(5000);
+        }
+    }
     public void sleep(int millis)
     {
         runtime.reset();
@@ -315,73 +237,92 @@ public class AutonomousRedFar extends OpMode
         }
     }
 
-    public void autonomousLeft()
+    public void AutonomousLeft()
     {
-        //fill with autonomous script.
-    }
-
-    public void autonomousMid()
-    {
-        drive("forward", 5, 0.5);
-        drive("right", 3, 0.5);
-        drive("forward", 12, 0.5);
-
-        PivotServo.setPosition(servoPivotGrabPosition);
+        DriveRobot("forward", 12, 0.5);
+        TurnRobot("counter", 45, 0.2);
+        DriveRobot("forward", 4, 0.5);
+        servoPivot.setPosition(servoPivotGrabPosition);
         sleep(500);
-        ClawServo1.setPosition(servoClaw1Open);
+        servoClaw1.setPosition(servoClaw1Open);
+        sleep(1000);
+
+        DriveRobot("backward", 4, 0.5);
+        TurnRobot("clockwise", 45, 0.2);
+        //DriveRobot("right", 34, 0.5);
+
     }
 
-    public void autonomousRight()
+    public void AutonomousMid()
     {
-        drive("forward", 12, 0.5);
-        drive("right", 8, 0.5);
-        PivotServo.setPosition(servoPivotGrabPosition);
+        DriveRobot("forward", 5, 0.5);
+        DriveRobot("right", 2, 0.5);
+        DriveRobot("forward", 12, 0.5);
+
+        servoPivot.setPosition(servoPivotGrabPosition);
         sleep(500);
-        ClawServo1.setPosition(servoClaw1Open);
+        servoClaw1.setPosition(servoClaw1Open);
+
+        sleep(1000);
+        DriveRobot("right", 30, 0.5);
+        servoClaw2.setPosition(servoClaw2Open);
     }
-    public void setup()
+
+    public void AutonomousRight()
+    {
+        DriveRobot("forward", 12, 0.5);
+        DriveRobot("right", 8, 0.5);
+        servoPivot.setPosition(servoPivotGrabPosition);
+        sleep(500);
+        servoClaw1.setPosition(servoClaw1Open);
+
+        sleep(1000);
+        DriveRobot("right", 24, 0.5);
+        servoClaw2.setPosition(servoClaw2Open);
+    }
+    public void RobotSetup()
     {
         imu = hardwareMap.get(IMU.class, "imu");
-        Orientation hubRotation = xyzOrientation(xRotation, yRotation, zRotation);
+        Orientation hubRotation = xyzOrientation(rotationX, rotationY, rotationZ);
 
         RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(hubRotation);
         imu.initialize(new IMU.Parameters(orientationOnRobot));
 
 
 
-        BackLeft = hardwareMap.get(DcMotor.class, "BackLeft");
-        FrontLeft = hardwareMap.get(DcMotor.class, "FrontLeft");
-        BackRight = hardwareMap.get(DcMotor.class, "BackRight");
-        FrontRight = hardwareMap.get(DcMotor.class, "FrontRight");
+        motorBackLeft = hardwareMap.get(DcMotor.class, "BackLeft");
+        motorFrontLeft = hardwareMap.get(DcMotor.class, "FrontLeft");
+        motorBackRight = hardwareMap.get(DcMotor.class, "BackRight");
+        motorFrontRight = hardwareMap.get(DcMotor.class, "FrontRight");
 
-        ClawServo1 = hardwareMap.get(Servo.class, "ClawServo1");
-        ClawServo2 = hardwareMap.get(Servo.class, "ClawServo2");
-        PivotServo = hardwareMap.get(Servo.class, "PivotServo");
-        RotateServo = hardwareMap.get(Servo.class, "RotateServo");
-
-
-        FrontRight.setDirection(DcMotorSimple.Direction.FORWARD);
-        FrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        BackRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        servoClaw1 = hardwareMap.get(Servo.class, "ClawServo1");
+        servoClaw2 = hardwareMap.get(Servo.class, "ClawServo2");
+        servoPivot = hardwareMap.get(Servo.class, "PivotServo");
+        servoRotate = hardwareMap.get(Servo.class, "RotateServo");
 
 
-        BackLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        BackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        FrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        FrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motorFrontRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        motorFrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorBackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorBackRight.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        PodRight = hardwareMap.get(DcMotor.class, "FrontRight");
-        PodLeft = hardwareMap.get(DcMotor.class, "PodLeft");
-        PodBack = hardwareMap.get(DcMotor.class, "FrontLeft");
+
+        motorBackLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motorBackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motorFrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motorFrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        odometryPodRight = hardwareMap.get(DcMotor.class, "FrontRight");
+        odometryPodLeft = hardwareMap.get(DcMotor.class, "PodLeft");
+        odometryPodBack = hardwareMap.get(DcMotor.class, "FrontLeft");
     }
 
     public void init()
     {
-        setup();
+        RobotSetup();
 
-        ClawServo1.setPosition(servoClaw1Closed);
-        ClawServo2.setPosition(servoClaw2Closed);
+        servoClaw1.setPosition(servoClaw1Closed);
+        servoClaw2.setPosition(servoClaw2Closed);
 
 
         runtime.reset();
@@ -389,7 +330,7 @@ public class AutonomousRedFar extends OpMode
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         cam = OpenCvCameraFactory.getInstance().createWebcam(webcamName, cameraMonitorViewId);
 
-        cam.setPipeline(new propRecognition());
+        cam.setPipeline(new PropRecognition());
 
         cam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
                                   {
@@ -417,38 +358,31 @@ public class AutonomousRedFar extends OpMode
 
         cam.closeCameraDevice();
         telemetry.addData(("propPosition"), propPosition);
-        //FrontLeft.setPower(-0.2);
-        //FrontRight.setPower(0.2);
-        //BackLeft.setPower(-0.2);
-        //BackRight.setPower(0.2);
-
 
         if(propPosition.equalsIgnoreCase("left"))
         {
-            autonomousLeft();
+            AutonomousLeft();
         }
-
-        if(propPosition.equalsIgnoreCase("middle"))
+        else if(propPosition.equalsIgnoreCase("middle"))
         {
-            autonomousMid();
+            AutonomousMid();
         }
-
-        if(propPosition.equalsIgnoreCase("right"))
+        else if(propPosition.equalsIgnoreCase("right"))
         {
-            autonomousRight();
+            AutonomousRight();
         }
 
     }
 
     public void loop()
     {
-        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-        gyroAngle = orientation.getYaw(AngleUnit.DEGREES);
-        telemetry.addData("gyroangle", gyroAngle);
+        //YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        //gyroAngle = orientation.getYaw(AngleUnit.DEGREES);
+        //telemetry.addData("gyroangle", gyroAngle);
     }
 
 
-    class propRecognition extends OpenCvPipeline
+    class PropRecognition extends OpenCvPipeline
     {
         Mat YCbCr = new Mat();
         Mat outPut = new Mat();
@@ -460,53 +394,46 @@ public class AutonomousRedFar extends OpMode
 
             Imgproc.cvtColor(input, YCbCr, Imgproc.COLOR_RGB2HSV);
 
-            Rect leftRect = new Rect(212, 100, 200, 200);
-            //Rect middleRect = new Rect(425, 1, 424, 719);
-            Rect rightRect = new Rect(820, 115, 200, 200);
+            Rect rectLeft = new Rect(260, 250, 300, 300);
+            Rect rectRight = new Rect(800, 280, 300, 300);
 
             input.copyTo(outPut);
 
-            Imgproc.rectangle(outPut, leftRect, color, 2);
-            //Imgproc.rectangle(outPut, middleRect, color, 2);
-            Imgproc.rectangle(outPut, rightRect, color, 2);
+            Imgproc.rectangle(outPut, rectLeft, color, 2);
+            Imgproc.rectangle(outPut, rectRight, color, 2);
 
 
-            Mat leftCrop = YCbCr.submat(leftRect);
-            //Mat middleCrop = YCbCr.submat(middleRect);
-            Mat rightCrop = YCbCr.submat(rightRect);
+            Mat matLeftCrop = YCbCr.submat(rectLeft);
+            Mat matRightCrop = YCbCr.submat(rectRight);
 
-            Core.extractChannel(leftCrop, leftCrop, 2);
-            //Core.extractChannel(middleCrop, middleCrop, 2);
-            Core.extractChannel(rightCrop, rightCrop, 2);
+            Core.extractChannel(matLeftCrop, matLeftCrop, 2);
+            Core.extractChannel(matRightCrop, matRightCrop, 2);
+            
+            Scalar colorLeftAvg = Core.mean(matLeftCrop);
+            Scalar colorRightAvg = Core.mean(matRightCrop);
 
+            telemetry.addData("middleVal", (int)colorLeftAvg.val[0]);
+            telemetry.addData("rightVal", (int)colorRightAvg.val[0]);
 
-            Scalar leftavg = Core.mean(leftCrop);
-            //Scalar midavg = Core.mean(middleCrop);
-            Scalar rightavg = Core.mean(rightCrop);
-
-            telemetry.addData("middleVal", (int)leftavg.val[0]);
-            telemetry.addData("rightVal", (int)rightavg.val[0]);
-            //telemetry.addData("middleVal", (int)midavg.val[0]);
-
-            if (middleColorValue == 0 && runtime.milliseconds() > 6000)
+            if (colorMiddleValue == 0 && runtime.milliseconds() > 8000)
             {
-                middleColorValue = (int)leftavg.val[0];
-                rightColorValue = (int)rightavg.val[0];
+                colorMiddleValue = (int)colorLeftAvg.val[0];
+                colorRightValue = (int)colorRightAvg.val[0];
             }
-            else if ((middleColorValue < (int) leftavg.val[0] + 5) && (middleColorValue > (int) leftavg.val[0] - 5))
+            else if ((colorMiddleValue < (int) colorLeftAvg.val[0] + 10) && (colorMiddleValue > (int) colorLeftAvg.val[0] - 10))
             {
-                propPosition = "Middle";
+                propPosition = "middle";
             }
-            else if (rightColorValue > (int) rightavg.val[0] + 5)
+            else if ((colorRightValue < (int) colorRightAvg.val[0] - 10) || (colorRightValue > (int) colorRightAvg.val[0] + 10))
             {
-                propPosition = "Right";
+                propPosition = "right";
             }
             else
             {
-                propPosition = "Left";
+                propPosition = "left";
             }
-            telemetry.addData("middlestart", middleColorValue);
-            telemetry.addData("rightstart", rightColorValue);
+            telemetry.addData("middlestart", colorMiddleValue);
+            telemetry.addData("rightstart", colorRightValue);
             telemetry.addData(("propPosition"), propPosition);
 
             return(outPut);
@@ -514,7 +441,6 @@ public class AutonomousRedFar extends OpMode
 
         private void initAprilTag()
         {
-
             // Create the AprilTag processor the easy way.
             aprilTag = AprilTagProcessor.easyCreateWithDefaults();
 
@@ -553,18 +479,18 @@ public class AutonomousRedFar extends OpMode
                         double degSquare = detection.ftcPose.yaw;
                         if (degSquare < 0)
                         {
-                            FrontLeft.setPower(0.2);
-                            FrontRight.setPower(-0.2);
-                            BackLeft.setPower(-0.2);
-                            BackRight.setPower(0.2);
+                            motorFrontLeft.setPower(0.2);
+                            motorFrontRight.setPower(-0.2);
+                            motorBackLeft.setPower(-0.2);
+                            motorBackRight.setPower(0.2);
 
                         }
                         else
                         {
-                            FrontLeft.setPower(0);
-                            FrontRight.setPower(0);
-                            BackLeft.setPower(0);
-                            BackRight.setPower(0);
+                            motorFrontLeft.setPower(0);
+                            motorFrontRight.setPower(0);
+                            motorBackLeft.setPower(0);
+                            motorBackRight.setPower(0);
                         }
                     }
                 }
@@ -573,31 +499,26 @@ public class AutonomousRedFar extends OpMode
                     telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
                     telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
 
-                    FrontLeft.setPower(0);
-                    FrontRight.setPower(0);
-                    BackLeft.setPower(0);
-                    BackRight.setPower(0);
+                    motorFrontLeft.setPower(0);
+                    motorFrontRight.setPower(0);
+                    motorBackLeft.setPower(0);
+                    motorBackRight.setPower(0);
                 }
 
             }
 
             if (currentDetections == null)
             {
-                FrontLeft.setPower(0);
-                FrontRight.setPower(0);
-                BackLeft.setPower(0);
-                BackRight.setPower(0);
+                motorFrontLeft.setPower(0);
+                motorFrontRight.setPower(0);
+                motorBackLeft.setPower(0);
+                motorBackRight.setPower(0);
             }
-            // end for() loop
 
-            // Add "key" information to telemetry
             telemetry.addLine("\nkey:\nXYZ = X (Right), Y (Forward), Z (Up) dist.");
             telemetry.addLine("PRY = Pitch, Roll & Yaw (XYZ Rotation)");
             telemetry.addLine("RBE = Range, Bearing & Elevation");
-
-
-        }   // end method telemetryAprilTag()
-
+        }
     }
 
 }
