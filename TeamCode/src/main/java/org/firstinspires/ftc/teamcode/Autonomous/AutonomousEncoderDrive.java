@@ -17,7 +17,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Autonomous
 
-public class AutonomousTest extends LinearOpMode
+public class AutonomousEncoderDrive extends LinearOpMode
 {
 
     /*
@@ -66,11 +66,6 @@ public class AutonomousTest extends LinearOpMode
 
 
     final int ticks_to_inch = 336;
-
-
-    int currentPosition = PodLeft.getCurrentPosition();
-    int currentPositionR = PodRight.getCurrentPosition();
-    int currentPositionM = PodBack.getCurrentPosition();
 
     private ElapsedTime runtime = new ElapsedTime();
 
@@ -198,49 +193,41 @@ public class AutonomousTest extends LinearOpMode
         drive(5, 0.5, 5);
     }
 
-    public void drive(int inches, double speed, double timeout)
+public void drive(int inches, double speed, double timeout)
+{
+    int targetLeft;
+    int targetRight;
+
+    if(opModeIsActive())
     {
-        int targetLeft;
-        int targetRight;
+        targetLeft = PodLeft.getCurrentPosition() + (int)(inches * ticks_to_inch);
+        targetRight = PodRight.getCurrentPosition() + (int)(inches * ticks_to_inch);
 
-        if(opModeIsActive())
+        PodLeft.setTargetPosition(targetLeft);
+
+        while(opModeIsActive() && PodLeft.getCurrentPosition() < PodLeft.getTargetPosition())
         {
-            targetLeft = FrontLeft.getCurrentPosition() + (int)(inches * ticks_to_inch);
-            targetRight = FrontRight.getCurrentPosition() + (int)(inches * ticks_to_inch);
-
-            FrontLeft.setTargetPosition(targetLeft);
-            FrontRight.setTargetPosition(targetLeft);
-            BackLeft.setTargetPosition(targetRight);
-            BackRight.setTargetPosition(targetRight);
-
-            FrontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            BackLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            FrontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            BackRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            runtime.reset();
             FrontRight.setPower(speed);
             FrontLeft.setPower(speed);
             BackLeft.setPower(speed);
             BackRight.setPower(speed);
-
-            while(opModeIsActive() && (runtime.seconds() < timeout) && FrontLeft.isBusy() && FrontRight.isBusy() && BackLeft.isBusy() && BackLeft.isBusy())
-            {
-                telemetry.addData("Running to",  " %7d :%7d", targetLeft,  targetRight);
-                telemetry.addData("Currently at",  " at %7d :%7d", FrontLeft.getCurrentPosition(), FrontRight.getCurrentPosition());
-                telemetry.update();
-            }
-
-            FrontRight.setPower(0);
-            FrontLeft.setPower(0);
-            BackLeft.setPower(0);
-            BackRight.setPower(0);
-
-            FrontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            BackLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            FrontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            BackRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
         }
+
+        runtime.reset();
+
+        FrontRight.setPower(0);
+        FrontLeft.setPower(0);
+        BackLeft.setPower(0);
+        BackRight.setPower(0);
+
+
+        while(opModeIsActive() && (runtime.seconds() < timeout))
+        {
+            telemetry.addData("Running to",  " %7d :%7d", targetLeft,  targetRight);
+            telemetry.addData("Currently at",  " at %7d :%7d", PodLeft.getCurrentPosition(), PodRight.getCurrentPosition());
+            telemetry.update();
+        }
+
     }
+}
 }
