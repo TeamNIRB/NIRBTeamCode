@@ -13,112 +13,101 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 public class TestDrivev2 extends LinearOpMode
 {
-
-    double motorSpeed; // controls the speed of the robot
-
     // robot movement motors
-    private DcMotor BackLeft;
-    private DcMotor FrontLeft;
-    private DcMotor BackRight;
-    private DcMotor FrontRight;
+    private DcMotor motorFrontRight;
+    private DcMotor motorFrontLeft;
+    private DcMotor motorBackRight;
+    private DcMotor motorBackLeft;
 
     // linear slide
-    double armSpeed; // controls the speed of the arm
-    private DcMotor SlideLeft;
-    private DcMotor SlideRight;
+    private DcMotor motorSlideLeft;
+    private DcMotor motorSlideRight;
 
 
     /*
     defines the servos used in the claw
 
-    ClawServo1 is the bottom claw and ClawServo2 is the top claw
-    the top claw is the side with black tape
+    servoClaw1 is the bottom claw and servoClaw2 is the top claw
+    the top claw is the side with ruby
 
-    RotateServo rotates the claw and PivotServo moves the claw up and down
+    servoRotate rotates the claw and servoPivot moves the claw up and down
 
      */
 
-    private Servo ClawServo1;
-    private Servo ClawServo2;
-    private Servo RotateServo;
-    private Servo PivotServo;
+    private Servo servoClaw1;
+    private Servo servoClaw2;
+    private Servo servoRotate;
+    private Servo servoPivot;
+    private Servo servoDroneLauncher;
 
-    private Servo DroneLauncher;
-
+    double motorSpeed; // controls the speed of the robot
+    double armSpeed; // controls the speed of the arm
 
     // defining variables for the driver controller
     float driveLeftStickY;
     float driveLeftStickX;
     float driveRightStickX;
-    int driveButtonX;
-    int driveButtonY;
-    int driveButtonA;
-    int driveButtonB;
-    int driveRightBumper;
+    boolean driveButtonX;
+    boolean driveButtonY;
+    boolean driveButtonA;
+    boolean driveButtonB;
+    boolean driveRightBumper;
     float driveRightTrigger;
     float driveLeftTrigger;
-
 
     // defining variables for the arm controller
     float armRightStickY;
     float armLeftStickY;
 
-    int armButtonA;
-    int armButtonB;
-    int armButtonX;
-    int armButtonY;
-    float armRightBumper;
-    float armLeftBumper;
+    boolean armButtonA;
+    boolean armButtonB;
+    boolean armButtonX;
+    boolean armButtonY;
+    boolean armRightBumper;
+    boolean armLeftBumper;
 
     float armLeftTrigger;
 
     int armButtonXStatus = 0; //determines if button X was pressed
     int armButtonYStatus = 0; //determines if button Y was pressed
 
-
     // linear slide variables
     int slideTickPosition = 0;
-    int slideLeftPos = 0;
-    int slideRightPos = 0;
+    int motorSlideLeftPos = 0;
+    int motorSlideRightPos = 0;
 
     //servo position constants
+    //bottom claw
+    final double servoClaw1Open = 0.71;  // - more closed
+    final double servoClaw1Closed = 0.41;
 
-    // bottom claw
-    // closed is zero position
-    final double servoClaw1Open = 0.7;
-    final double servoClaw1Closed = 0.4;
+    //top claw
+    final double servoClaw2Open = 0.54; // - more closed
+    final double servoClaw2Closed = 0.24;
 
-    // top claw
-    // closed is zero position
-    final double servoClaw2Open = 0.85;
-    final double servoClaw2Closed = 0.55;
+    final double servoPivotPlacePosition = 0.70;
+    final double servoPivotRotatePosition = 0.65;
+    final double servoPivotDrivePosition = 0.55;
+    final double servoPivotGrabPosition = 0.87; // + lowers angle
 
-    // pivot servo
-    // grab position is zero position
-    final double servoPivotPlacePosition = 0.35;
-    final double servoPivotRotatePosition = 0.4;
-    final double servoPivotGrabPosition = 0.56;
+    //top is the side with ruby
+    double servoRotateTop = 0.171; // + rotates clockwise
+    double servoRotateBottom = 0.848;
 
-    // rotate servo     TOP IS THE SIDE WITH TAPE
-    // top position is zero position
-    final double servoRotateTop = 0.3;
-    final double servoRotateBottom = 0.96;
-    final double servoDroneLaunchPosition = 0.65;
-
-
+    final double servoDroneHoldPosition = 0.5;
+    final double servoDroneLaunchPosition = 0.15;
 
 
     // miscellaneous variables
     double timeStart;
     int activeClaw = 1;
-    int slideStatus = 1; //1=drive 2=pre-hang 3=hang
-    int isHanging = 0;
-    int clawPositionStatus = 0;//0=grab 1=rotate
+    int slideStatus = 1; // 1=drive 2=pre-hang (no longer used) 3=hang
+    boolean isHanging = false;
+    int clawPositionStatus = 0; // 0=grab 1=rotate 2=finish rotate 3=drive
 
     boolean activeX = false;
 
     int clawXPosition;
-
 
     //lower number = less pressure required to reach level
     final double lowSpeedPressure = 0.55;
@@ -130,280 +119,227 @@ public class TestDrivev2 extends LinearOpMode
 
     public void claw()
     {
-        armRightBumper = (gamepad2.right_bumper) ? 1 : 0;
-        armLeftBumper = (gamepad2.left_bumper) ? 1 : 0;
-        armButtonA = (gamepad2.a) ? 1 : 0;
-        armButtonB = (gamepad2.b) ? 1 : 0;
-        boolean armX = (gamepad2.x);
-        armButtonY = (gamepad2.y) ? 1 : 0;
+        armLeftBumper = gamepad2.left_bumper; // open claw(s)
+        armRightBumper = gamepad2.right_bumper; // close claw(s)
+        armButtonA = gamepad2.a; // lift and hang
+        armButtonB = gamepad2.b; // operate both claws
+        armButtonX = gamepad2.x; // tilt claw
+        armButtonY = gamepad2.y; // flip claw
 
         // bottom claw
-        if (activeClaw == 1 || armButtonB == 1)
+        if (activeClaw == 1 || armButtonB)
         {
-            if (armLeftBumper == 1)
+            if (armLeftBumper)
             {
-                ClawServo1.setPosition(servoClaw1Open);
+                servoClaw1.setPosition(servoClaw1Open);
             }
-            if (armRightBumper == 1)
+            if (armRightBumper)
             {
-                ClawServo1.setPosition(servoClaw1Closed);
+                servoClaw1.setPosition(servoClaw1Closed);
             }
         }
 
         // top claw
-        if (activeClaw == 2 || armButtonB == 1)
+        if (activeClaw == 2 || armButtonB)
         {
-            if (armLeftBumper == 1)
+            if (armLeftBumper)
             {
-                ClawServo2.setPosition(servoClaw2Open);//top claw
+                servoClaw2.setPosition(servoClaw2Open);//top claw
             }
-            if (armRightBumper == 1)
+            if (armRightBumper)
             {
-                ClawServo2.setPosition(servoClaw2Closed);
+                servoClaw2.setPosition(servoClaw2Closed);
             }
         }
 
-        //change active claw
-        if(slideStatus == 1)
+        //change active claw (flip claw)
+        if(clawPositionStatus == 0 & armButtonY)
         {
-
-            if(clawPositionStatus == 0 & armButtonY == 1)
+            servoPivot.setPosition(servoPivotRotatePosition);
+            clawPositionStatus = 1;
+            timeStart = System.currentTimeMillis();
+        }
+        else if(clawPositionStatus == 1 & System.currentTimeMillis() >= (timeStart + 300))  // add delay without sleep
+        {
+            if(activeClaw == 1)
             {
-                PivotServo.setPosition(servoPivotRotatePosition);
-                clawPositionStatus = 1;
-                timeStart = System.currentTimeMillis();
+                servoRotate.setPosition(servoRotateBottom);
+            }
+            else
+            {
+                servoRotate.setPosition(servoRotateTop);
             }
 
+            clawPositionStatus = 2;
+            timeStart = System.currentTimeMillis();
+        }
+        else if(clawPositionStatus == 2 & System.currentTimeMillis() >= (timeStart + 600))
+        {
+            servoPivot.setPosition(servoPivotGrabPosition);
+            clawPositionStatus = 0;
 
-            else if(clawPositionStatus == 1 & System.currentTimeMillis() >= (timeStart + 300))
+            if(activeClaw == 1)
             {
-                if(activeClaw == 1)
-                {
-                    RotateServo.setPosition(servoRotateBottom);
-                }
-
-                else
-                {
-                    RotateServo.setPosition(servoRotateTop);
-                }
-
-                clawPositionStatus = 2;
-                timeStart = System.currentTimeMillis();
+                activeClaw = 2;
+            }
+            else
+            {
+                activeClaw = 1;
             }
 
-            else if(clawPositionStatus == 2 & System.currentTimeMillis() >= (timeStart + 600))
+        }
+        else if(clawPositionStatus == 0)
+        {
+            if (motorSlideLeft.getCurrentPosition() * -1.0 >= 300)
             {
-
-                PivotServo.setPosition(servoPivotGrabPosition);
-                clawPositionStatus = 0;
-
-                if(activeClaw == 1)
-                {
-                    activeClaw = 2;
-                }
-
-                else
-                {
-                    activeClaw = 1;
-                }
-
+                servoPivot.setPosition(servoPivotPlacePosition);
             }
-            else if(clawPositionStatus == 0)
+            else
             {
-
-                if(SlideLeft.getCurrentPosition() * -1.0 >= 300)
-                {
-                    PivotServo.setPosition(servoPivotPlacePosition);
-                }
-
-                else
-                {
-                    PivotServo.setPosition(servoPivotGrabPosition);
-                }
-
+                servoPivot.setPosition(servoPivotGrabPosition);
             }
         }
-        else
+        else if(clawPositionStatus == 3)
         {
-            PivotServo.setPosition(servoPivotGrabPosition);
+            if (motorSlideLeft.getCurrentPosition() * -1.0 >= 300)
+            {
+                servoPivot.setPosition(servoPivotGrabPosition);
+            }
+            else
+            {
+                servoPivot.setPosition(servoPivotDrivePosition);
+            }
         }
 
-
-        if(armX)
+        if (armButtonX & armButtonXStatus == 0 & clawPositionStatus != 3)
         {
-            PivotServo.setPosition(servoPivotRotatePosition);
+            clawPositionStatus = 3;
+            armButtonXStatus = 1;
         }
-        if(armButtonA == 1)
+        else if (armButtonX & armButtonXStatus == 0 & clawPositionStatus == 3)
         {
-            PivotServo.setPosition(servoPivotGrabPosition);
+            clawPositionStatus = 0;
+            armButtonXStatus = 1;
+        }
+        else if (!armButtonX)
+        {
+            armButtonXStatus = 0;
         }
 
     }
 
     public void slide()
     {
-
-        armRightStickY = gamepad2.right_stick_y;
         armLeftStickY = gamepad2.left_stick_y;
+        armRightStickY = gamepad2.right_stick_y;
         armLeftTrigger = gamepad2.left_trigger;
-        driveButtonA = (gamepad2.y) ? 1 : 0;
+        driveButtonA = gamepad2.y;
 
         if(armRightStickY < 0)  // Up
         {
-
-            SlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            SlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            armSpeed = 0.8;
-            SlideLeft.setPower(armRightStickY * armSpeed); //Moves arm according to the stick (should use encoder)
-            SlideRight.setPower(armRightStickY * armSpeed);
-
-            if(slideStatus == 3)
-            {
-                slideStatus = 1;
-            }
-
+            motorSlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            motorSlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            armSpeed = 1.0;
+            motorSlideLeft.setPower(armRightStickY * armSpeed); //Moves arm according to the stick (should use encoder)
+            motorSlideRight.setPower(armRightStickY * armSpeed);
         }
-
         else if(armRightStickY > 0) // Down
         {
+            motorSlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            motorSlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-            SlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            SlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-            if(SlideLeft.getCurrentPosition() * -1.0 >= 500)
+            if(motorSlideLeft.getCurrentPosition() * -1.0 >= 500)
             {
-                armSpeed = 0.8;
+                armSpeed = 1.0;
             }
-
             else
             {
                 armSpeed = 0.25;
             }
 
-            SlideLeft.setPower(armRightStickY * armSpeed);
-            SlideRight.setPower(armRightStickY * armSpeed);
+            motorSlideLeft.setPower(armRightStickY * armSpeed);
+            motorSlideRight.setPower(armRightStickY * armSpeed);
 
-            if(slideStatus == 3)
+            if(slideStatus == 3) // release hanging robot
             {
                 slideStatus = 1;
+                isHanging = false;
             }
-
         }
         else
         {
-
-            SlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            SlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            SlideLeft.setPower(-0.05);
-            SlideRight.setPower(-0.05);
-
+            motorSlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            motorSlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            motorSlideLeft.setPower(-0.05);
+            motorSlideRight.setPower(-0.05);
         }
 
-        if (armButtonX == 1 & armButtonXStatus == 0)
-        {
-
-            if (slideStatus == 1)
-            {
-                slideStatus = 2;
-            }
-
-            else if (slideStatus == 2)
-            {
-                slideStatus = 1;
-            }
-
-            armButtonXStatus = 1;
-        }
-
-        else if (armButtonX == 0)
-        {
-            armButtonXStatus = 0;
-        }
-
-
-        if (armButtonA == 1)
+        if (armButtonA)
         {
             slideTickPosition = 500;
             slideStatus = 3;
         }
-
-
         else if(slideStatus == 3)
         {
-            if (isHanging == 0)
+            if (isHanging)
             {
-
-                if ((SlideLeft.getCurrentPosition() * -1.0) > slideTickPosition)
+                if ((motorSlideLeft.getCurrentPosition() * -1.0) > slideTickPosition)
                 {
-
-                    SlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    SlideLeft.setPower(1);
-                    SlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                    SlideRight.setPower(1);
-
+                    motorSlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    motorSlideLeft.setPower(1);
+                    motorSlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                    motorSlideRight.setPower(1);
                 }
-
                 else
                 {
-
-                    isHanging = 1;
-                    slideLeftPos = SlideLeft.getCurrentPosition();
-                    slideRightPos = SlideRight.getCurrentPosition();
-
+                    isHanging = true;
+                    motorSlideLeftPos = motorSlideLeft.getCurrentPosition();
+                    motorSlideRightPos = motorSlideRight.getCurrentPosition();
                 }
-
             }
-            else if (isHanging == 1)
+            else if (isHanging)
             {
-
-                SlideLeft.setPower(0.5);
-                SlideRight.setPower(0.5);
-                SlideLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                SlideRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                SlideLeft.setTargetPosition(slideLeftPos);
-                SlideRight.setTargetPosition(slideRightPos);
-                SlideLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                SlideRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
+                motorSlideLeft.setPower(0.5);
+                motorSlideRight.setPower(0.5);
+                motorSlideLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                motorSlideRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                motorSlideLeft.setTargetPosition(motorSlideLeftPos);
+                motorSlideRight.setTargetPosition(motorSlideRightPos);
+                motorSlideLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                motorSlideRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             }
-
         }
 
         if(armLeftTrigger >= 0.3)
         {
-            SlideLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            SlideRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-            SlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            SlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            motorSlideLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            motorSlideRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            motorSlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            motorSlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         }
-
     }
     public void mecanum()
     {
-
         driveLeftStickY = gamepad1.left_stick_y;
         driveLeftStickX = gamepad1.left_stick_x;
         driveRightStickX = gamepad1.right_stick_x;
-        driveButtonA = (gamepad1.a) ? 1 : 0;
-        driveButtonB = (gamepad1.b) ? 1 : 0;
-        driveButtonX = (gamepad1.x) ? 1 : 0;
-        driveButtonY = (gamepad1.y) ? 1 : 0;
-        driveRightBumper = (gamepad1.right_bumper) ? 1 : 0;
-        driveRightTrigger = (gamepad1.right_trigger);
-        driveLeftTrigger = (gamepad1.left_trigger);
+        driveButtonA = gamepad1.a;
+        driveButtonB = gamepad1.b;
+        driveButtonX = gamepad1.x;
+        driveButtonY = gamepad1.y;
+        driveRightBumper = gamepad1.right_bumper;
+        driveLeftTrigger = gamepad1.left_trigger;
+        driveRightTrigger = gamepad1.right_trigger;
 
+        motorFrontLeft.setPower((driveLeftStickY - driveLeftStickX - driveRightStickX) * motorSpeed);
+        motorFrontRight.setPower((driveLeftStickY + driveLeftStickX + driveRightStickX) * motorSpeed);
+        motorBackLeft.setPower((driveLeftStickY + driveLeftStickX - driveRightStickX) * motorSpeed);
+        motorBackRight.setPower((driveLeftStickY - driveLeftStickX + driveRightStickX) * motorSpeed);
 
-
-        BackLeft.setPower((driveLeftStickY + driveLeftStickX - driveRightStickX) * motorSpeed);
-        FrontLeft.setPower((driveLeftStickY - driveLeftStickX - driveRightStickX) * motorSpeed);
-        BackRight.setPower((driveLeftStickY - driveLeftStickX + driveRightStickX) * motorSpeed);
-        FrontRight.setPower((driveLeftStickY + driveLeftStickX + driveRightStickX) * motorSpeed);
-
-
-        if (driveRightBumper == 1)
+        // launch drone
+        if (driveRightBumper)
         {
-            DroneLauncher.setPosition(servoDroneLaunchPosition);
+            servoDroneLauncher.setPosition(servoDroneLaunchPosition);
         }
 
         motorSpeed = 1.0;
@@ -416,126 +352,89 @@ public class TestDrivev2 extends LinearOpMode
         {
             motorSpeed *= 0.5;
         }
-
-        /*
-        //low speed
-        if(driveRightTrigger >= lowSpeedPressure && driveRightTrigger <= 1.0)
-        {
-            motorSpeed = lowDriveSpeed;
-        }
-
-        //med speed
-        else if(driveRightTrigger >= medSpeedPressure && driveRightTrigger < lowSpeedPressure)
-        {
-            motorSpeed = medDriveSpeed;
-        }
-
-        else
-        {
-            motorSpeed = highDriveSpeed;
-        }
-
-        */
-
-
     }
-
 
     //press ctrl shift . Or right click in between {  } and click "Folding" and "Fold code block" to hide telemetry1 and initialize.
     public void telemetry1()
     {
-
-        telemetry.addData("SlideLeft", SlideLeft.getCurrentPosition());
-        telemetry.addData("SlideRight", SlideRight.getCurrentPosition());
+        telemetry.addData("SlideLeft", motorSlideLeft.getCurrentPosition());
+        telemetry.addData("SlideRight", motorSlideRight.getCurrentPosition());
         telemetry.addData("Tick", slideTickPosition);
         telemetry.addData("Hanging", isHanging);
         telemetry.addData("Y status", armButtonYStatus);
-        telemetry.addData("Pivot", PivotServo.getPosition());
-        telemetry.addData("Rotate", RotateServo.getPosition());
-        telemetry.addData("Claw1", ClawServo1.getPosition());
-        telemetry.addData("Claw2", ClawServo2.getPosition());
-        telemetry.addData("right trigger", driveRightTrigger);
+        telemetry.addData("Claw1", servoClaw1.getPosition());
+        telemetry.addData("Claw2", servoClaw2.getPosition());
+        telemetry.addData("Pivot", servoPivot.getPosition());
+        telemetry.addData("Rotate", servoRotate.getPosition());
+        telemetry.addData("Right Trigger", driveRightTrigger);
 
         telemetry.update();
-
     }
 
     public void initialize()
     {
         // setting motor hardware to variables
-        BackLeft = hardwareMap.get(DcMotor.class, "BackLeft");
-        BackRight = hardwareMap.get(DcMotor.class, "BackRight");
-        FrontLeft = hardwareMap.get(DcMotor.class, "FrontLeft");
-        FrontRight = hardwareMap.get(DcMotor.class, "FrontRight");
-        SlideLeft = hardwareMap.get(DcMotor.class, "SlideLeft");
-        SlideRight = hardwareMap.get(DcMotor.class, "SlideRight");
+        motorFrontLeft = hardwareMap.get(DcMotor.class, "FrontLeft");
+        motorFrontRight = hardwareMap.get(DcMotor.class, "FrontRight");
+        motorBackLeft = hardwareMap.get(DcMotor.class, "BackLeft");
+        motorBackRight = hardwareMap.get(DcMotor.class, "BackRight");
+        motorSlideLeft = hardwareMap.get(DcMotor.class, "SlideLeft");
+        motorSlideRight = hardwareMap.get(DcMotor.class, "SlideRight");
 
         // setting servo hardware to variables
-        DroneLauncher = hardwareMap.get(Servo.class, "DroneLauncher");
-        ClawServo1 = hardwareMap.get(Servo.class, "ClawServo1");
-        ClawServo2 = hardwareMap.get(Servo.class, "ClawServo2");
-        PivotServo = hardwareMap.get(Servo.class, "PivotServo");
-        RotateServo = hardwareMap.get(Servo.class, "RotateServo");
-
+        servoClaw1 = hardwareMap.get(Servo.class, "ClawServo1");
+        servoClaw2 = hardwareMap.get(Servo.class, "ClawServo2");
+        servoPivot = hardwareMap.get(Servo.class, "PivotServo");
+        servoRotate = hardwareMap.get(Servo.class, "RotateServo");
+        servoDroneLauncher = hardwareMap.get(Servo.class, "DroneLauncher");
 
         // set motor direction
-        BackRight.setDirection(DcMotorSimple.Direction.REVERSE);
-        FrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
-        BackLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-        FrontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-        SlideLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        SlideRight.setDirection(DcMotorSimple.Direction.FORWARD);
-
-
+        motorFrontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        motorFrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorBackLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        motorBackRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorSlideLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        motorSlideRight.setDirection(DcMotorSimple.Direction.FORWARD);
 
         // set zero power behavior
-        BackLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        BackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        FrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        FrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        SlideRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        SlideLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
+        motorFrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motorFrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motorBackLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motorBackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motorSlideLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motorSlideRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         waitForStart();
 
-
-        SlideLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        SlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        SlideRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        SlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
+        motorSlideLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorSlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        motorSlideRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorSlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         sleep(200);
-        PivotServo.setPosition(servoPivotRotatePosition);
+        servoPivot.setPosition(servoPivotRotatePosition);
         sleep(500);
-        RotateServo.setPosition(servoRotateTop);
+        servoRotate.setPosition(servoRotateTop);
         activeClaw = 1;
         sleep(500);
 
-        ClawServo2.setPosition(servoClaw2Open);
-        ClawServo1.setPosition(servoClaw1Open);
-        PivotServo.setPosition(servoPivotGrabPosition);
+        servoClaw1.setPosition(servoClaw1Open);
+        servoClaw2.setPosition(servoClaw2Open);
+        servoPivot.setPosition(servoPivotGrabPosition);
     }
-
-
 
     @Override
     public void runOpMode()
     {
-
         initialize();
-        DroneLauncher.setPosition(0);
+        servoDroneLauncher.setPosition(0);
 
         while(opModeIsActive())
         {
-
             mecanum();
             claw();
             slide();
             telemetry1();
-
         }
 
     }
