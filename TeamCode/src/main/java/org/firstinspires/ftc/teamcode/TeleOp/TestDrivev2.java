@@ -87,12 +87,12 @@ public class TestDrivev2 extends LinearOpMode
 
     final double servoPivotPlacePosition = 0.70;
     final double servoPivotRotatePosition = 0.65;
-    final double servoPivotDrivePosition = 0.55;
+    final double servoPivotDrivePosition = 0.50;
     final double servoPivotGrabPosition = 0.87; // + lowers angle
 
     //top is the side with ruby
-    double servoRotateTop = 0.171; // + rotates clockwise
-    double servoRotateBottom = 0.848;
+    double servoRotateTop = 0.155; // + rotates clockwise
+    double servoRotateBottom = 0.825;
 
     final double servoDroneHoldPosition = 0.5;
     final double servoDroneLaunchPosition = 0.15;
@@ -101,9 +101,9 @@ public class TestDrivev2 extends LinearOpMode
     // miscellaneous variables
     double timeStart;
     int activeClaw = 1;
+    int clawPositionStatus = 0; // 0=grab 1=rotate 2=finish rotate 3=drive
     int slideStatus = 1; // 1=drive 2=pre-hang (no longer used) 3=hang
     boolean isHanging = false;
-    int clawPositionStatus = 0; // 0=grab 1=rotate 2=finish rotate 3=drive
 
     boolean activeX = false;
 
@@ -159,7 +159,7 @@ public class TestDrivev2 extends LinearOpMode
             clawPositionStatus = 1;
             timeStart = System.currentTimeMillis();
         }
-        else if(clawPositionStatus == 1 & System.currentTimeMillis() >= (timeStart + 300))  // add delay without sleep
+        else if(clawPositionStatus == 1 & System.currentTimeMillis() >= (timeStart + 100))  // add delay without sleep
         {
             if(activeClaw == 1)
             {
@@ -173,7 +173,7 @@ public class TestDrivev2 extends LinearOpMode
             clawPositionStatus = 2;
             timeStart = System.currentTimeMillis();
         }
-        else if(clawPositionStatus == 2 & System.currentTimeMillis() >= (timeStart + 600))
+        else if(clawPositionStatus == 2 & System.currentTimeMillis() >= (timeStart + 200))
         {
             servoPivot.setPosition(servoPivotGrabPosition);
             clawPositionStatus = 0;
@@ -413,10 +413,10 @@ public class TestDrivev2 extends LinearOpMode
 
         sleep(200);
         servoPivot.setPosition(servoPivotRotatePosition);
-        sleep(500);
+        sleep(300);
         servoRotate.setPosition(servoRotateTop);
         activeClaw = 1;
-        sleep(500);
+        sleep(300);
 
         servoClaw1.setPosition(servoClaw1Open);
         servoClaw2.setPosition(servoClaw2Open);
