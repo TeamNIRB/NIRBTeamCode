@@ -162,7 +162,9 @@ public class AutonomousRedFar extends OpMode
         int targetBack;
 
         double driveSpeedLower = 0.2;
-        int driveSpeedLowerPoint = 2;
+        double driveSpeedMiddle = 0.4;
+        int driveSpeedDeadZoneHigh = 4;
+        int driveSpeedDeadZoneLow = 2;
 
 
         if(runConcurrent.equalsIgnoreCase("claw - pivot grab"))
@@ -191,18 +193,26 @@ public class AutonomousRedFar extends OpMode
 
             while(odometryPodLeft.getCurrentPosition() < odometryPodLeft.getTargetPosition())
             {
-                
-                if(odometryPodLeft.getTargetPosition() - (driveSpeedLowerPoint * ticksToInch) <= odometryPodLeft.getCurrentPosition())
+                //check for dead zone 4 inches from target position.
+                if(odometryPodLeft.getTargetPosition() - (driveSpeedDeadZoneHigh * ticksToInch) <= odometryPodLeft.getCurrentPosition() &&  odometryPodLeft.getTargetPosition() - (driveSpeedDeadZoneLow * ticksToInch) > odometryPodLeft.getCurrentPosition())
+                {
+                    motorFrontLeft.setPower(driveSpeedMiddle);
+                    motorFrontRight.setPower(driveSpeedMiddle);
+                    motorBackLeft.setPower(driveSpeedMiddle);
+                    motorBackRight.setPower(driveSpeedMiddle);
+                }
+                //check for dead zone 2 inches from target position.
+                else if(odometryPodLeft.getTargetPosition() - (driveSpeedDeadZoneLow * ticksToInch) <= odometryPodLeft.getCurrentPosition())
                 {
                     motorFrontLeft.setPower(driveSpeedLower);
                     motorFrontRight.setPower(driveSpeedLower);
                     motorBackLeft.setPower(driveSpeedLower);
                     motorBackRight.setPower(driveSpeedLower);
                 }
-                
+                //if robot is outside both dead zones. run at specified drive speed
                 else
                 {
-    
+
                     motorFrontLeft.setPower(driveSpeed);
                     motorFrontRight.setPower(driveSpeed);
                     motorBackLeft.setPower(driveSpeed);
@@ -222,16 +232,27 @@ public class AutonomousRedFar extends OpMode
 
             driveSpeed *= -1;
             driveSpeedLower *= -1;
-            
+            driveSpeedMiddle *= -1;
+
             while(odometryPodLeft.getCurrentPosition() > odometryPodLeft.getTargetPosition())
             {
-                if(odometryPodLeft.getTargetPosition() + (driveSpeedLowerPoint * ticksToInch) >= odometryPodLeft.getCurrentPosition())
+                //check for dead zone 4 inches from target position.
+                if(odometryPodLeft.getTargetPosition() + (driveSpeedDeadZoneHigh * ticksToInch) >= odometryPodLeft.getCurrentPosition() &&  odometryPodLeft.getTargetPosition() + (driveSpeedDeadZoneLow * ticksToInch) < odometryPodLeft.getCurrentPosition())
+                {
+                    motorFrontLeft.setPower(driveSpeedMiddle);
+                    motorFrontRight.setPower(driveSpeedMiddle);
+                    motorBackLeft.setPower(driveSpeedMiddle);
+                    motorBackRight.setPower(driveSpeedMiddle);
+                }
+                //check for dead zone 2 inches from target position.
+                else if(odometryPodLeft.getTargetPosition() + (driveSpeedDeadZoneLow * ticksToInch) >= odometryPodLeft.getCurrentPosition())
                 {
                     motorFrontLeft.setPower(driveSpeedLower);
                     motorFrontRight.setPower(driveSpeedLower);
                     motorBackLeft.setPower(driveSpeedLower);
                     motorBackRight.setPower(driveSpeedLower);
                 }
+                //if robot is outside both dead zones. run at specified drive speed
                 else
                 {
                     motorFrontLeft.setPower(driveSpeed);
@@ -253,14 +274,23 @@ public class AutonomousRedFar extends OpMode
 
             while(odometryPodBack.getCurrentPosition() > odometryPodBack.getTargetPosition())
             {
-                if(odometryPodBack.getTargetPosition() + (driveSpeedLowerPoint * ticksToInch) >= odometryPodBack.getCurrentPosition())
+                //check for dead zone 4 inches from target position.
+                if(odometryPodBack.getTargetPosition() + (driveSpeedDeadZoneHigh * ticksToInch) >= odometryPodBack.getCurrentPosition() &&  odometryPodBack.getTargetPosition() + (driveSpeedDeadZoneLow * ticksToInch) < odometryPodBack.getCurrentPosition())
+                {
+                    motorFrontLeft.setPower(driveSpeedMiddle * -1);
+                    motorFrontRight.setPower(driveSpeedMiddle);
+                    motorBackLeft.setPower(driveSpeedMiddle);
+                    motorBackRight.setPower(driveSpeedMiddle * -1);
+                }
+                //check for dead zone 2 inches from target position.
+                else if(odometryPodBack.getTargetPosition() + (driveSpeedDeadZoneLow * ticksToInch) >= odometryPodBack.getCurrentPosition())
                 {
                     motorFrontLeft.setPower(driveSpeedLower * -1);
                     motorFrontRight.setPower(driveSpeedLower);
                     motorBackLeft.setPower(driveSpeedLower);
                     motorBackRight.setPower(driveSpeedLower * -1);
                 }
-
+                //if robot is outside both dead zones. run at specified drive speed
                 else
                 {
 
@@ -269,7 +299,7 @@ public class AutonomousRedFar extends OpMode
                     motorBackLeft.setPower(driveSpeed);
                     motorBackRight.setPower(driveSpeed * -1);
                 }
-                
+
             }
             motorFrontLeft.setPower(0);
             motorFrontRight.setPower(0);
@@ -283,14 +313,24 @@ public class AutonomousRedFar extends OpMode
 
             while(odometryPodBack.getCurrentPosition() < odometryPodBack.getTargetPosition())
             {
+                //check for dead zone 4 inches from target position.
+                if(odometryPodBack.getTargetPosition() - (driveSpeedDeadZoneHigh * ticksToInch) <= odometryPodBack.getCurrentPosition() &&  odometryPodBack.getTargetPosition() - (driveSpeedDeadZoneLow * ticksToInch) > odometryPodBack.getCurrentPosition())
+                {
+                    motorFrontLeft.setPower(driveSpeedMiddle);
+                    motorFrontRight.setPower(driveSpeedMiddle * -1);
+                    motorBackLeft.setPower(driveSpeedMiddle * -1);
+                    motorBackRight.setPower(driveSpeedMiddle);
 
-                if(odometryPodBack.getTargetPosition() - (driveSpeedLowerPoint * ticksToInch) <= odometryPodBack.getCurrentPosition())
+                }
+                //check for dead zone 2 inches from target position.
+                else if(odometryPodBack.getTargetPosition() - (driveSpeedDeadZoneLow * ticksToInch) <= odometryPodBack.getCurrentPosition())
                 {
                     motorFrontLeft.setPower(driveSpeedLower);
                     motorFrontRight.setPower(driveSpeedLower * -1);
                     motorBackLeft.setPower(driveSpeedLower * -1);
                     motorBackRight.setPower(driveSpeedLower);
                 }
+                //if robot is outside both dead zones. run at specified drive speed
                 else
                 {
 
