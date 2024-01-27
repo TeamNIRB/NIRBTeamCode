@@ -44,7 +44,7 @@ public class AutonomousRedFar extends OpMode
     double degSquare;
     double tagDistance;
     double gyroAngle;
-    
+
     double targetAngle;
 
     double timeStart; // used to delay without using sleep
@@ -109,6 +109,7 @@ public class AutonomousRedFar extends OpMode
     public int colorRightValue = 0;
 
 
+
     public void RobotSetup()
     {
         imu = hardwareMap.get(IMU.class, "imu");
@@ -160,6 +161,10 @@ public class AutonomousRedFar extends OpMode
         int targetLeft;
         int targetBack;
 
+        double driveSpeedLower = 0.2;
+        int driveSpeedLowerPoint = 2;
+
+
         if(runConcurrent.equalsIgnoreCase("claw - pivot grab"))
         {
             // Moves claw to grab position
@@ -182,13 +187,30 @@ public class AutonomousRedFar extends OpMode
 
         if(driveDirection.equalsIgnoreCase("forward"))
         {
+
+
             while(odometryPodLeft.getCurrentPosition() < odometryPodLeft.getTargetPosition())
             {
-                motorFrontLeft.setPower(driveSpeed);
-                motorFrontRight.setPower(driveSpeed);
-                motorBackLeft.setPower(driveSpeed);
-                motorBackRight.setPower(driveSpeed);
+                
+                if(odometryPodLeft.getTargetPosition() - (driveSpeedLowerPoint * ticksToInch) <= odometryPodLeft.getCurrentPosition())
+                {
+                    motorFrontLeft.setPower(driveSpeedLower);
+                    motorFrontRight.setPower(driveSpeedLower);
+                    motorBackLeft.setPower(driveSpeedLower);
+                    motorBackRight.setPower(driveSpeedLower);
+                }
+                
+                else
+                {
+    
+                    motorFrontLeft.setPower(driveSpeed);
+                    motorFrontRight.setPower(driveSpeed);
+                    motorBackLeft.setPower(driveSpeed);
+                    motorBackRight.setPower(driveSpeed);
+                }
+
             }
+
 
             motorFrontLeft.setPower(0);
             motorFrontRight.setPower(0);
@@ -199,12 +221,24 @@ public class AutonomousRedFar extends OpMode
         {
 
             driveSpeed *= -1;
+            driveSpeedLower *= -1;
+            
             while(odometryPodLeft.getCurrentPosition() > odometryPodLeft.getTargetPosition())
             {
-                motorFrontLeft.setPower(driveSpeed);
-                motorFrontRight.setPower(driveSpeed);
-                motorBackLeft.setPower(driveSpeed);
-                motorBackRight.setPower(driveSpeed);
+                if(odometryPodLeft.getTargetPosition() + (driveSpeedLowerPoint * ticksToInch) >= odometryPodLeft.getCurrentPosition())
+                {
+                    motorFrontLeft.setPower(driveSpeedLower);
+                    motorFrontRight.setPower(driveSpeedLower);
+                    motorBackLeft.setPower(driveSpeedLower);
+                    motorBackRight.setPower(driveSpeedLower);
+                }
+                else
+                {
+                    motorFrontLeft.setPower(driveSpeed);
+                    motorFrontRight.setPower(driveSpeed);
+                    motorBackLeft.setPower(driveSpeed);
+                    motorBackRight.setPower(driveSpeed);
+                }
             }
 
             motorFrontLeft.setPower(0);
@@ -219,12 +253,24 @@ public class AutonomousRedFar extends OpMode
 
             while(odometryPodBack.getCurrentPosition() > odometryPodBack.getTargetPosition())
             {
-                motorFrontLeft.setPower(driveSpeed * -1);
-                motorFrontRight.setPower(driveSpeed);
-                motorBackLeft.setPower(driveSpeed);
-                motorBackRight.setPower(driveSpeed * -1);
-            }
+                if(odometryPodBack.getTargetPosition() + (driveSpeedLowerPoint * ticksToInch) >= odometryPodBack.getCurrentPosition())
+                {
+                    motorFrontLeft.setPower(driveSpeedLower * -1);
+                    motorFrontRight.setPower(driveSpeedLower);
+                    motorBackLeft.setPower(driveSpeedLower);
+                    motorBackRight.setPower(driveSpeedLower * -1);
+                }
 
+                else
+                {
+
+                    motorFrontLeft.setPower(driveSpeed * -1);
+                    motorFrontRight.setPower(driveSpeed);
+                    motorBackLeft.setPower(driveSpeed);
+                    motorBackRight.setPower(driveSpeed * -1);
+                }
+                
+            }
             motorFrontLeft.setPower(0);
             motorFrontRight.setPower(0);
             motorBackLeft.setPower(0);
@@ -237,6 +283,22 @@ public class AutonomousRedFar extends OpMode
 
             while(odometryPodBack.getCurrentPosition() < odometryPodBack.getTargetPosition())
             {
+
+                if(odometryPodBack.getTargetPosition() - (driveSpeedLowerPoint * ticksToInch) <= odometryPodBack.getCurrentPosition())
+                {
+                    motorFrontLeft.setPower(driveSpeedLower);
+                    motorFrontRight.setPower(driveSpeedLower * -1);
+                    motorBackLeft.setPower(driveSpeedLower * -1);
+                    motorBackRight.setPower(driveSpeedLower);
+                }
+                else
+                {
+
+                    motorFrontLeft.setPower(driveSpeed);
+                    motorFrontRight.setPower(driveSpeed * -1);
+                    motorBackLeft.setPower(driveSpeed* -1);
+                    motorBackRight.setPower(driveSpeed);
+                }
                 motorFrontLeft.setPower(driveSpeed);
                 motorFrontRight.setPower(driveSpeed * -1);
                 motorBackLeft.setPower(driveSpeed * -1);
@@ -359,15 +421,15 @@ public class AutonomousRedFar extends OpMode
         double aprilTagY = 0.0;
 
 
-        while(!inPosition) 
+        while(!inPosition)
         {
             List<AprilTagDetection> currentDetections = aprilTag.getDetections();
             telemetry.addData("# AprilTags Detected", currentDetections.size());
 
             // Step through the list of detections and display info for each one.
-            for (AprilTagDetection detection : currentDetections) 
+            for (AprilTagDetection detection : currentDetections)
             {
-                if (detection.metadata != null) 
+                if (detection.metadata != null)
                 {
                     telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
                     telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
@@ -375,7 +437,7 @@ public class AutonomousRedFar extends OpMode
                     telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
 
 
-                    if (detection.id == tagId) 
+                    if (detection.id == tagId)
                     {
                         YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
 
@@ -383,10 +445,10 @@ public class AutonomousRedFar extends OpMode
                         degSquare = detection.ftcPose.yaw;
                         tagDistance = detection.ftcPose.y;
                         gyroAngle = orientation.getYaw(AngleUnit.DEGREES);
-                        if (angleCorrecting == false) 
+                        if (angleCorrecting == false)
                         {
                             targetAngle = gyroAngle - degSquare;
-                            if (gyroAngle < targetAngle - 1 || gyroAngle > targetAngle + 1) 
+                            if (gyroAngle < targetAngle - 1 || gyroAngle > targetAngle + 1)
                             {
                                 angleCorrecting = true;
                             }
@@ -397,8 +459,8 @@ public class AutonomousRedFar extends OpMode
                         }
                     }
 
-                } 
-                else 
+                }
+                else
                 {
                     telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
                     telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
@@ -413,37 +475,37 @@ public class AutonomousRedFar extends OpMode
                 aprilTagY = detection.ftcPose.y;
 
             }
-            if (angleCorrecting) 
+            if (angleCorrecting)
             {
-                if (gyroAngle < targetAngle - 8) 
+                if (gyroAngle < targetAngle - 8)
                 {
                     motorFrontLeft.setPower(-0.3);
                     motorFrontRight.setPower(0.3);
                     motorBackLeft.setPower(-0.3);
                     motorBackRight.setPower(0.3);
-                } 
-                else if (gyroAngle < targetAngle - 1) 
+                }
+                else if (gyroAngle < targetAngle - 1)
                 {
                     motorFrontLeft.setPower(-0.1);
                     motorFrontRight.setPower(0.1);
                     motorBackLeft.setPower(-0.1);
                     motorBackRight.setPower(0.1);
-                } 
-                else if (gyroAngle > targetAngle + 1) 
+                }
+                else if (gyroAngle > targetAngle + 1)
                 {
                     motorFrontLeft.setPower(0.1);
                     motorFrontRight.setPower(-0.1);
                     motorBackLeft.setPower(0.1);
                     motorBackRight.setPower(-0.1);
                 }
-                else if (gyroAngle > targetAngle + 8) 
+                else if (gyroAngle > targetAngle + 8)
                 {
                     motorFrontLeft.setPower(0.8);
                     motorFrontRight.setPower(-0.8);
                     motorBackLeft.setPower(0.8);
                     motorBackRight.setPower(-0.8);
-                } 
-                else 
+                }
+                else
                 {
                     motorFrontLeft.setPower(0);
                     motorFrontRight.setPower(0);
@@ -451,8 +513,8 @@ public class AutonomousRedFar extends OpMode
                     motorBackRight.setPower(0);
                     angleCorrecting = false;
                 }
-            } 
-            else 
+            }
+            else
             {
                 motorFrontLeft.setPower(0);
                 motorFrontRight.setPower(0);
@@ -460,7 +522,7 @@ public class AutonomousRedFar extends OpMode
                 motorBackRight.setPower(0);
             }
 
-            if (currentDetections == null) 
+            if (currentDetections == null)
             {
                 motorFrontLeft.setPower(0);
                 motorFrontRight.setPower(0);
@@ -773,19 +835,19 @@ public class AutonomousRedFar extends OpMode
         cam.setPipeline(new PropRecognition());
 
         cam.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
-              {
-                  @Override
-                  public void onOpened()
-                  {
-                      cam.startStreaming(1280, 720, OpenCvCameraRotation.UPSIDE_DOWN);
-                  }
+                                  {
+                                      @Override
+                                      public void onOpened()
+                                      {
+                                          cam.startStreaming(1280, 720, OpenCvCameraRotation.UPSIDE_DOWN);
+                                      }
 
-                  @Override
-                  public void onError(int errorCode)
-                  {
+                                      @Override
+                                      public void onError(int errorCode)
+                                      {
 
-                  }
-              }
+                                      }
+                                  }
         );
 
     }
