@@ -17,6 +17,7 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.*;
 import org.openftc.easyopencv.*;
 
+import com.acmerobotics.roadrunner.ftc.DriveView;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -161,10 +162,12 @@ public class AutonomousRedFar extends OpMode
         int targetLeft;
         int targetBack;
 
-        double driveSpeedLower = 0.2;
-        double driveSpeedMiddle = 0.4;
-        int driveSpeedDeadZoneHigh = 4;
-        int driveSpeedDeadZoneLow = 2;
+        double driveSpeedLow = 0.3;
+        double driveSpeedMiddle = 0.45;
+        double driveSpeedFast = 0.6;
+        double driveSpeedDeadZoneLow = 2;
+        double driveSpeedDeadZoneMiddle = 6;
+        double driveSpeedDeadZoneFast = 10;
 
 
         if(runConcurrent.equalsIgnoreCase("claw - pivot grab"))
@@ -189,38 +192,27 @@ public class AutonomousRedFar extends OpMode
 
         if(driveDirection.equalsIgnoreCase("forward"))
         {
-
-
             while(odometryPodLeft.getCurrentPosition() < odometryPodLeft.getTargetPosition())
             {
                 //check for dead zone 4 inches from target position.
-                if(odometryPodLeft.getTargetPosition() - (driveSpeedDeadZoneHigh * ticksToInch) <= odometryPodLeft.getCurrentPosition() &&  odometryPodLeft.getTargetPosition() - (driveSpeedDeadZoneLow * ticksToInch) > odometryPodLeft.getCurrentPosition())
+                if(odometryPodLeft.getTargetPosition() - odometryPodLeft.getCurrentPosition() < driveSpeedDeadZoneLow * ticksToInch)
                 {
-                    motorFrontLeft.setPower(driveSpeedMiddle);
-                    motorFrontRight.setPower(driveSpeedMiddle);
-                    motorBackLeft.setPower(driveSpeedMiddle);
-                    motorBackRight.setPower(driveSpeedMiddle);
+                    driveSpeed = driveSpeedLow;
                 }
-                //check for dead zone 2 inches from target position.
-                else if(odometryPodLeft.getTargetPosition() - (driveSpeedDeadZoneLow * ticksToInch) <= odometryPodLeft.getCurrentPosition())
+                else if(odometryPodLeft.getTargetPosition() - odometryPodLeft.getCurrentPosition() < driveSpeedDeadZoneMiddle * ticksToInch)
                 {
-                    motorFrontLeft.setPower(driveSpeedLower);
-                    motorFrontRight.setPower(driveSpeedLower);
-                    motorBackLeft.setPower(driveSpeedLower);
-                    motorBackRight.setPower(driveSpeedLower);
+                    driveSpeed = driveSpeedMiddle;
                 }
-                //if robot is outside both dead zones. run at specified drive speed
-                else
+                else if(odometryPodLeft.getTargetPosition() - odometryPodLeft.getCurrentPosition() < driveSpeedDeadZoneFast * ticksToInch)
                 {
-
-                    motorFrontLeft.setPower(driveSpeed);
-                    motorFrontRight.setPower(driveSpeed);
-                    motorBackLeft.setPower(driveSpeed);
-                    motorBackRight.setPower(driveSpeed);
+                    driveSpeed = driveSpeedFast;
                 }
 
+                motorFrontLeft.setPower(driveSpeed);
+                motorFrontRight.setPower(driveSpeed);
+                motorBackLeft.setPower(driveSpeed);
+                motorBackRight.setPower(driveSpeed);
             }
-
 
             motorFrontLeft.setPower(0);
             motorFrontRight.setPower(0);
@@ -229,37 +221,30 @@ public class AutonomousRedFar extends OpMode
         }
         else if(driveDirection.equalsIgnoreCase("backward"))
         {
-
             driveSpeed *= -1;
-            driveSpeedLower *= -1;
+            driveSpeedLow *= -1;
             driveSpeedMiddle *= -1;
+            driveSpeedFast *= -1;
 
             while(odometryPodLeft.getCurrentPosition() > odometryPodLeft.getTargetPosition())
             {
-                //check for dead zone 4 inches from target position.
-                if(odometryPodLeft.getTargetPosition() + (driveSpeedDeadZoneHigh * ticksToInch) >= odometryPodLeft.getCurrentPosition() &&  odometryPodLeft.getTargetPosition() + (driveSpeedDeadZoneLow * ticksToInch) < odometryPodLeft.getCurrentPosition())
+                if(odometryPodLeft.getCurrentPosition() - odometryPodLeft.getTargetPosition() < driveSpeedDeadZoneLow * ticksToInch)
                 {
-                    motorFrontLeft.setPower(driveSpeedMiddle);
-                    motorFrontRight.setPower(driveSpeedMiddle);
-                    motorBackLeft.setPower(driveSpeedMiddle);
-                    motorBackRight.setPower(driveSpeedMiddle);
+                    driveSpeed = driveSpeedLow;
                 }
-                //check for dead zone 2 inches from target position.
-                else if(odometryPodLeft.getTargetPosition() + (driveSpeedDeadZoneLow * ticksToInch) >= odometryPodLeft.getCurrentPosition())
+                else if(odometryPodLeft.getCurrentPosition() - odometryPodLeft.getTargetPosition() < driveSpeedDeadZoneMiddle * ticksToInch)
                 {
-                    motorFrontLeft.setPower(driveSpeedLower);
-                    motorFrontRight.setPower(driveSpeedLower);
-                    motorBackLeft.setPower(driveSpeedLower);
-                    motorBackRight.setPower(driveSpeedLower);
+                    driveSpeed = driveSpeedMiddle;
                 }
-                //if robot is outside both dead zones. run at specified drive speed
-                else
+                else if(odometryPodLeft.getCurrentPosition() - odometryPodLeft.getTargetPosition() < driveSpeedDeadZoneFast * ticksToInch)
                 {
-                    motorFrontLeft.setPower(driveSpeed);
-                    motorFrontRight.setPower(driveSpeed);
-                    motorBackLeft.setPower(driveSpeed);
-                    motorBackRight.setPower(driveSpeed);
+                    driveSpeed = driveSpeedFast;
                 }
+
+                motorFrontLeft.setPower(driveSpeed);
+                motorFrontRight.setPower(driveSpeed);
+                motorBackLeft.setPower(driveSpeed);
+                motorBackRight.setPower(driveSpeed);
             }
 
             motorFrontLeft.setPower(0);
@@ -269,79 +254,68 @@ public class AutonomousRedFar extends OpMode
         }
         else if(driveDirection.equalsIgnoreCase("left"))
         {
-            targetBack = odometryPodBack.getCurrentPosition() + (int)((driveDistance * -1) * ticksToInch);
-            odometryPodBack.setTargetPosition(targetBack);
-
             while(odometryPodBack.getCurrentPosition() > odometryPodBack.getTargetPosition())
             {
-                //check for dead zone 4 inches from target position.
-                if(odometryPodBack.getTargetPosition() + (driveSpeedDeadZoneHigh * ticksToInch) >= odometryPodBack.getCurrentPosition() &&  odometryPodBack.getTargetPosition() + (driveSpeedDeadZoneLow * ticksToInch) < odometryPodBack.getCurrentPosition())
-                {
-                    motorFrontLeft.setPower(driveSpeedMiddle * -1);
-                    motorFrontRight.setPower(driveSpeedMiddle);
-                    motorBackLeft.setPower(driveSpeedMiddle);
-                    motorBackRight.setPower(driveSpeedMiddle * -1);
-                }
-                //check for dead zone 2 inches from target position.
-                else if(odometryPodBack.getTargetPosition() + (driveSpeedDeadZoneLow * ticksToInch) >= odometryPodBack.getCurrentPosition())
-                {
-                    motorFrontLeft.setPower(driveSpeedLower * -1);
-                    motorFrontRight.setPower(driveSpeedLower);
-                    motorBackLeft.setPower(driveSpeedLower);
-                    motorBackRight.setPower(driveSpeedLower * -1);
-                }
-                //if robot is outside both dead zones. run at specified drive speed
-                else
-                {
+                telemetry.addData("target", odometryPodLeft.getTargetPosition());
+                telemetry.addData("current", odometryPodLeft.getCurrentPosition());
+                telemetry.update();
 
-                    motorFrontLeft.setPower(driveSpeed * -1);
-                    motorFrontRight.setPower(driveSpeed);
-                    motorBackLeft.setPower(driveSpeed);
-                    motorBackRight.setPower(driveSpeed * -1);
+                //check for dead zone very close target position.
+                if(odometryPodBack.getCurrentPosition() - odometryPodBack.getTargetPosition() < driveSpeedDeadZoneLow * ticksToInch)
+                {
+                    driveSpeed = driveSpeedLow;
                 }
+                //check for dead zone close to target position.
+                else if(odometryPodBack.getCurrentPosition() - odometryPodBack.getTargetPosition() < driveSpeedDeadZoneMiddle * ticksToInch)
+                {
+                    driveSpeed = driveSpeedMiddle;
+                }
+                else if(odometryPodBack.getCurrentPosition() - odometryPodBack.getTargetPosition() < driveSpeedDeadZoneFast * ticksToInch)
+                {
+                    driveSpeed = driveSpeedFast;
+                }
+
+                motorFrontLeft.setPower(driveSpeed * -1);
+                motorFrontRight.setPower(driveSpeed);
+                motorBackLeft.setPower(driveSpeed);
+                motorBackRight.setPower(driveSpeed * -1);
 
             }
+
             motorFrontLeft.setPower(0);
             motorFrontRight.setPower(0);
             motorBackLeft.setPower(0);
             motorBackRight.setPower(0);
+
         }
         else if(driveDirection.equalsIgnoreCase("right"))
         {
-            targetBack = odometryPodBack.getCurrentPosition() + (int)(driveDistance * ticksToInch);
-            odometryPodBack.setTargetPosition(targetBack);
-
             while(odometryPodBack.getCurrentPosition() < odometryPodBack.getTargetPosition())
             {
-                //check for dead zone 4 inches from target position.
-                if(odometryPodBack.getTargetPosition() - (driveSpeedDeadZoneHigh * ticksToInch) <= odometryPodBack.getCurrentPosition() &&  odometryPodBack.getTargetPosition() - (driveSpeedDeadZoneLow * ticksToInch) > odometryPodBack.getCurrentPosition())
+                //check for dead zone very close to target position.
+                if(odometryPodBack.getTargetPosition() - odometryPodBack.getCurrentPosition() < driveSpeedDeadZoneLow * ticksToInch)
                 {
-                    motorFrontLeft.setPower(driveSpeedMiddle);
-                    motorFrontRight.setPower(driveSpeedMiddle * -1);
-                    motorBackLeft.setPower(driveSpeedMiddle * -1);
-                    motorBackRight.setPower(driveSpeedMiddle);
+                    driveSpeed = driveSpeedLow;
 
+                    telemetry.addLine("mid");
                 }
-                //check for dead zone 2 inches from target position.
-                else if(odometryPodBack.getTargetPosition() - (driveSpeedDeadZoneLow * ticksToInch) <= odometryPodBack.getCurrentPosition())
+                //check for dead zone close to target position.
+                else if(odometryPodBack.getTargetPosition() - odometryPodBack.getCurrentPosition() < driveSpeedDeadZoneMiddle * ticksToInch)
                 {
-                    motorFrontLeft.setPower(driveSpeedLower);
-                    motorFrontRight.setPower(driveSpeedLower * -1);
-                    motorBackLeft.setPower(driveSpeedLower * -1);
-                    motorBackRight.setPower(driveSpeedLower);
+                    driveSpeed = driveSpeedMiddle;
+                    telemetry.addLine("slow");
                 }
-                //if robot is outside both dead zones. run at specified drive speed
-                else
+                else if(odometryPodBack.getTargetPosition() - odometryPodBack.getCurrentPosition() < driveSpeedDeadZoneFast * ticksToInch)
                 {
+                    driveSpeed = driveSpeedFast;
+                    telemetry.addLine("fast");
+                }
 
-                    motorFrontLeft.setPower(driveSpeed);
-                    motorFrontRight.setPower(driveSpeed * -1);
-                    motorBackLeft.setPower(driveSpeed* -1);
-                    motorBackRight.setPower(driveSpeed);
-                }
+                telemetry.update();
+
                 motorFrontLeft.setPower(driveSpeed);
                 motorFrontRight.setPower(driveSpeed * -1);
-                motorBackLeft.setPower(driveSpeed * -1);
+                motorBackLeft.setPower(driveSpeed* -1);
                 motorBackRight.setPower(driveSpeed);
             }
 
@@ -352,6 +326,133 @@ public class AutonomousRedFar extends OpMode
         }
     }
 
+    public void RotateRobot (double degreeRotationAmount)
+    {
+        telemetry.addLine("rotate function");
+        telemetry.update();
+
+        double degreeAllowedError = 0.5;  // allow for error if gyro position not precise enough
+        double motorSpeedFull = 0.5;
+        double motorSpeedFast = 0.35;
+        double motorSpeedSlow = 0.2;
+
+        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+        double gyroOrientation = orientation.getYaw(AngleUnit.DEGREES);
+        double targetOrientation = gyroOrientation + degreeRotationAmount;
+
+        boolean rotationComplete = false;
+
+        boolean rotateOn = true; // for testing (turns on and off wheel motors);
+
+        while (!rotationComplete)
+        {
+            orientation = imu.getRobotYawPitchRollAngles();
+            gyroOrientation = orientation.getYaw(AngleUnit.DEGREES);
+
+            if (targetOrientation < -180 & gyroOrientation > 90) // gyro flipped from -180 side to +180 side
+            {
+                targetOrientation = targetOrientation + 360;
+            }
+            else if (targetOrientation > 180 & gyroOrientation < -90) // gyro flipped from +180 side to -180 side
+            {
+                targetOrientation = targetOrientation + 360;
+            }
+
+            telemetry.addData("target", targetOrientation);
+            telemetry.addData("actual", gyroOrientation);
+            telemetry.update();
+
+            if (gyroOrientation < targetOrientation - 20)
+            {
+                // rotate left full speed
+                if(rotateOn)
+                {
+                    motorFrontLeft.setPower(-1.0 * motorSpeedFull);
+                    motorFrontRight.setPower(motorSpeedFull);
+                    motorBackLeft.setPower(-1.0 * motorSpeedFull);
+                    motorBackRight.setPower(motorSpeedFull);
+                }
+                telemetry.addLine("rotate left full speed");
+            }
+            else if (gyroOrientation > targetOrientation + 20)
+            {
+                // rotate right full speed
+                if(rotateOn)
+                {
+                    motorFrontLeft.setPower(motorSpeedFull);
+                    motorFrontRight.setPower(-1.0 * motorSpeedFull);
+                    motorBackLeft.setPower(motorSpeedFull);
+                    motorBackRight.setPower(-1.0 * motorSpeedFull);
+                }
+                telemetry.addLine("rotate right full speed");
+            }
+            else if (gyroOrientation < targetOrientation - 8)
+            {
+                // rotate left fast
+                if(rotateOn)
+                {
+                    motorFrontLeft.setPower(-1.0 * motorSpeedFast);
+                    motorFrontRight.setPower(motorSpeedFast);
+                    motorBackLeft.setPower(-1.0 * motorSpeedFast);
+                    motorBackRight.setPower(motorSpeedFast);
+                }
+                telemetry.addLine("rotate left fast");
+            }
+            else if (gyroOrientation > targetOrientation + 8)
+            {
+                // rotate right fast
+                if(rotateOn)
+                {
+                    motorFrontLeft.setPower(motorSpeedFast);
+                    motorFrontRight.setPower(-1.0 * motorSpeedFast);
+                    motorBackLeft.setPower(motorSpeedFast);
+                    motorBackRight.setPower(-1.0 * motorSpeedFast);
+                }
+                telemetry.addLine("rotate right fast");
+            }
+            else if (gyroOrientation < targetOrientation - degreeAllowedError)
+            {
+                // rotate left slow
+                if(rotateOn)
+                {
+                    motorFrontLeft.setPower(-1.0 * motorSpeedSlow);
+                    motorFrontRight.setPower(motorSpeedSlow);
+                    motorBackLeft.setPower(-1.0 * motorSpeedSlow);
+                    motorBackRight.setPower(motorSpeedSlow);
+                }
+                telemetry.addLine("rotate left slow");
+            }
+            else if (gyroOrientation > targetOrientation + degreeAllowedError)
+            {
+                // rotate right slow
+                if(rotateOn)
+                {
+                    motorFrontLeft.setPower(motorSpeedSlow);
+                    motorFrontRight.setPower(-1.0 * motorSpeedSlow);
+                    motorBackLeft.setPower(motorSpeedSlow);
+                    motorBackRight.setPower(-1.0 * motorSpeedSlow);
+                }
+                telemetry.addLine("rotate right slow");
+            }
+            else
+            {
+                motorFrontLeft.setPower(0);
+                motorFrontRight.setPower(0);
+                motorBackLeft.setPower(0);
+                motorBackRight.setPower(0);
+                telemetry.addLine("stop rotation");
+                sleep(100);  // short sleep to allow refresh
+
+                if (gyroOrientation > targetOrientation - degreeAllowedError && gyroOrientation < targetOrientation + degreeAllowedError)
+                {
+                    // if orientation within error end while loop by setting rotationComplete to true
+
+                    telemetry.addLine("end loop");
+                    rotationComplete = true;
+                }
+            }
+        }
+    }
     public void TurnRobot(String turnDirection, int turnAngle, double turnSpeed)
     {
         int targetLeft;
@@ -454,19 +555,30 @@ public class AutonomousRedFar extends OpMode
 
     public double[] ReadAprilTag(int tagId)
     {
-        boolean inPosition = false;
-        double[] tagPosition = new double[2];
-
+        double[] tagPosition = new double[3]; // return values (if Y 0.0 then failed to find tag)
         double aprilTagX = 0.0;
         double aprilTagY = 0.0;
 
+        int attemptCurrent = 1;
+        int attemptMax = 3;
 
-        while(!inPosition)
+        boolean tagFound = false;
+        boolean isSquareToTag = false;
+
+        angleCorrecting = false;
+
+        runtime.reset();
+
+        while(isSquareToTag == false & runtime.milliseconds() < 3000 & attemptCurrent <= attemptMax)
         {
             List<AprilTagDetection> currentDetections = aprilTag.getDetections();
             telemetry.addData("# AprilTags Detected", currentDetections.size());
+            telemetry.addData("current runtime", runtime.milliseconds());
+            telemetry.update();
 
-            // Step through the list of detections and display info for each one.
+            //YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
+            //gyroAngle = orientation.getYaw(AngleUnit.DEGREES);
+
             for (AprilTagDetection detection : currentDetections)
             {
                 if (detection.metadata != null)
@@ -476,27 +588,39 @@ public class AutonomousRedFar extends OpMode
                     telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
                     telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
 
-
                     if (detection.id == tagId)
                     {
-                        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-
-                        tagDetected = true;
-                        degSquare = detection.ftcPose.yaw;
-                        tagDistance = detection.ftcPose.y;
-                        gyroAngle = orientation.getYaw(AngleUnit.DEGREES);
-                        if (angleCorrecting == false)
+                        if (detection.ftcPose.yaw > 1 || detection.ftcPose.yaw < -1) // check if square to tag
                         {
-                            targetAngle = gyroAngle - degSquare;
-                            if (gyroAngle < targetAngle - 1 || gyroAngle > targetAngle + 1)
+                            RotateRobot(detection.ftcPose.yaw * -1);
+                            if (detection.ftcPose.yaw > 5 & detection.ftcPose.x > -1 & attemptCurrent < attemptMax)
                             {
-                                angleCorrecting = true;
+                                DriveRobot("left", 2, 0.5, "none");
+                                sleep(700);
+                            }
+                            else if (detection.ftcPose.yaw < -5 & detection.ftcPose.x < 1 & attemptCurrent < attemptMax)                            {
+                                DriveRobot("right", 2, 0.5, "none");
+                                sleep(700);
                             }
                             else
                             {
-                                //inPosition = true;
+                                sleep(200);
                             }
+
+                            if (attemptCurrent == attemptMax)
+                            {
+                                isSquareToTag = true;
+                            }
+                            attemptCurrent++;
                         }
+                        else
+                        {
+                            isSquareToTag = true;
+                        }
+                        aprilTagX = detection.ftcPose.x;
+                        aprilTagY = detection.ftcPose.y;
+                        degSquare = detection.ftcPose.yaw;
+
                     }
 
                 }
@@ -509,83 +633,23 @@ public class AutonomousRedFar extends OpMode
                     motorFrontRight.setPower(0);
                     motorBackLeft.setPower(0);
                     motorBackRight.setPower(0);
+
+                    aprilTagX = 0.0;
+                    aprilTagY = 0.0;
                 }
 
-                aprilTagX = detection.ftcPose.x;
-                aprilTagY = detection.ftcPose.y;
+                //aprilTagX = detection.ftcPose.x;
+                //aprilTagY = detection.ftcPose.y;
 
             }
-            if (angleCorrecting)
-            {
-                if (gyroAngle < targetAngle - 8)
-                {
-                    motorFrontLeft.setPower(-0.3);
-                    motorFrontRight.setPower(0.3);
-                    motorBackLeft.setPower(-0.3);
-                    motorBackRight.setPower(0.3);
-                }
-                else if (gyroAngle < targetAngle - 1)
-                {
-                    motorFrontLeft.setPower(-0.1);
-                    motorFrontRight.setPower(0.1);
-                    motorBackLeft.setPower(-0.1);
-                    motorBackRight.setPower(0.1);
-                }
-                else if (gyroAngle > targetAngle + 1)
-                {
-                    motorFrontLeft.setPower(0.1);
-                    motorFrontRight.setPower(-0.1);
-                    motorBackLeft.setPower(0.1);
-                    motorBackRight.setPower(-0.1);
-                }
-                else if (gyroAngle > targetAngle + 8)
-                {
-                    motorFrontLeft.setPower(0.8);
-                    motorFrontRight.setPower(-0.8);
-                    motorBackLeft.setPower(0.8);
-                    motorBackRight.setPower(-0.8);
-                }
-                else
-                {
-                    motorFrontLeft.setPower(0);
-                    motorFrontRight.setPower(0);
-                    motorBackLeft.setPower(0);
-                    motorBackRight.setPower(0);
-                    angleCorrecting = false;
-                }
-            }
-            else
-            {
-                motorFrontLeft.setPower(0);
-                motorFrontRight.setPower(0);
-                motorBackLeft.setPower(0);
-                motorBackRight.setPower(0);
-            }
-
-            if (currentDetections == null)
-            {
-                motorFrontLeft.setPower(0);
-                motorFrontRight.setPower(0);
-                motorBackLeft.setPower(0);
-                motorBackRight.setPower(0);
-            }
-
-
-            telemetry.addLine("\nkey:\nXYZ = X (Right), Y (Forward), Z (Up) dist.");
-            telemetry.addLine("PRY = Pitch, Roll & Yaw (XYZ Rotation)");
-            telemetry.addLine("RBE = Range, Bearing & Elevation");
-
-            YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-
-            telemetry.addData("Yaw (Z)", "%.2f Deg. (Heading)", orientation.getYaw(AngleUnit.DEGREES));
-            telemetry.addData("target", targetAngle);
-            telemetry.update();
-
 
         }
 
+
+
         tagPosition[0] = aprilTagX;
         tagPosition[1] = aprilTagY;
+        tagPosition[2] = degSquare;
 
         return tagPosition;
     }
@@ -662,9 +726,9 @@ public class AutonomousRedFar extends OpMode
 
     public void AutonomousMid()
     {
-        DriveRobot("forward", 5, 0.5, "none");
-        DriveRobot("right", 2, 0.5, "none");
-        DriveRobot("forward", 12, 0.5, "claw - pivot grab");
+        DriveRobot("forward", 2, 0.5, "none");// 5
+        DriveRobot("right", 3, 0.5, "none");
+        DriveRobot("forward", 16, 1, "claw - pivot grab"); //12
 
         servoClaw1.setPosition(servoClaw1Open);// drop purple pixel
         sleep(200);
@@ -675,12 +739,47 @@ public class AutonomousRedFar extends OpMode
 
         DriveRobot("right", 25, 0.5, "none");
         DriveRobot("forward", 2, 0.5, "none");
-        TurnRobot("clockwise", 85, 0.5);
+        RotateRobot(-90);
 
         servoPivot.setPosition(servoPivotPlacePosition);// tilt claw
         MoveSlide(650, "up"); // raise arm
 
         double[] tagPosition = ReadAprilTag(6);
+        if(tagPosition[0] == 0.0)
+        {
+            telemetry.addData("not tag", tagPosition[2]);
+            // no tag detected after rotation
+        }
+        else
+        {
+            double cameraOffset = 5.5; // offset from camera
+            if (tagPosition[0] - cameraOffset > 0)
+            {
+                // move left
+                DriveRobot("left", (tagPosition[0] - cameraOffset) , 0.5, "none");
+            }
+            else
+            {
+                // move right
+                DriveRobot("right", (cameraOffset - tagPosition[0]) - 7, 0.5, "none");
+            }
+        }
+
+        DriveRobot("forward", 5, 0.5, "none");
+
+        servoClaw2.setPosition(servoClaw2Open);
+
+        DriveRobot("backward", 5, 1, "none");
+
+        RotateRobot(180);
+        
+        servoRotate.setPosition(servoRotateTop);
+
+        //DriveRobot("left", 24, 1.0, "none");
+        //DriveRobot("forward", 48, 1.0, "none");
+
+
+        /*
         DriveRobot("forward", (tagPosition[1] - 7.5), 0.5, "none");
 
         if(tagPosition[0] - 0.0 > 0)
@@ -699,16 +798,11 @@ public class AutonomousRedFar extends OpMode
         MoveSlide(0, "down");
         FlipClaw();
 
-
-
         telemetry.addData("x", tagPosition[0]);
         telemetry.addData("y", tagPosition[1]);
         telemetry.update();
-
+        */
         //DriveRobot("forward", 5, 0.5, "none");
-
-
-
     }
 
     public void AutonomousRight()
@@ -911,9 +1005,7 @@ public class AutonomousRedFar extends OpMode
 
         //visionPortal.close();
 
-        propPosition = "test";
-
-        telemetry.addData("position", propPosition);
+        //propPosition = "test";
         if(propPosition.equalsIgnoreCase("left"))
         {
             AutonomousLeft();
@@ -928,11 +1020,39 @@ public class AutonomousRedFar extends OpMode
         }
         else if(propPosition.equalsIgnoreCase("test"))
         {
-            double[] tagPosition = ReadAprilTag(3);
+
+            double[] tagPosition = ReadAprilTag(9);
+
+            telemetry.addData("position0", tagPosition[0]);
+            telemetry.addData("position1", tagPosition[1]);
+            telemetry.addData("position2", tagPosition[2]);
+
+            if(tagPosition[0] == 0.0)
+            {
+                telemetry.addData("not tag", tagPosition[2]);
+                // no tag detected after rotation
+            }
+            else
+            {
+                double cameraOffset = 5.5; // offset from camera
+                if (tagPosition[0] - cameraOffset > 0)
+                {
+                    // move left
+                    DriveRobot("left", tagPosition[0] - cameraOffset, 0.5, "none");
+                }
+                else
+                {
+                    // move right
+                    DriveRobot("right", cameraOffset - tagPosition[0], 0.5, "none");
+                }
+            }
 
             telemetry.addData("x", tagPosition[0]);
             telemetry.addData("y", tagPosition[1]);
+            telemetry.addData("deg", tagPosition[2]);
             telemetry.update();
+
+            //RotateRobot(180);
         }
 
     }
