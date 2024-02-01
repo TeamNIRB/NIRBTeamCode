@@ -772,50 +772,71 @@ public class AutonomousRedFar extends OpMode
         DriveRobot("backward", 5, 1, "none");
 
         RotateRobot(180);
-        
+
         servoRotate.setPosition(servoRotateTop);
 
         //DriveRobot("left", 24, 1.0, "none");
         //DriveRobot("forward", 48, 1.0, "none");
 
-
-        /*
-        DriveRobot("forward", (tagPosition[1] - 7.5), 0.5, "none");
-
-        if(tagPosition[0] - 0.0 > 0)
-        {
-            DriveRobot("right", (tagPosition[0] - 0.0), 0.5, "none");
-        }
-        else if(tagPosition[0] - 0.0 < 0)
-        {
-            DriveRobot("left", (tagPosition[0] - 0.0), 0.5, "none");
-        }
-
-        servoClaw2.setPosition(servoClaw2Open);// release yellow pixel
-        sleep(100);
-
-        DriveRobot("backward", 4, 0.5, "none");
-        MoveSlide(0, "down");
-        FlipClaw();
-
-        telemetry.addData("x", tagPosition[0]);
-        telemetry.addData("y", tagPosition[1]);
-        telemetry.update();
-        */
-        //DriveRobot("forward", 5, 0.5, "none");
     }
 
     public void AutonomousRight()
     {
-        DriveRobot("forward", 12, 0.5, "none");
-        DriveRobot("right", 8, 0.5, "none");
-        servoPivot.setPosition(servoPivotGrabPosition);
-        sleep(500);
-        servoClaw1.setPosition(servoClaw1Open);
+        DriveRobot("forward", 2, 0.5, "none");// 5
+        DriveRobot("right", 9, 0.5, "none");
+        DriveRobot("forward", 8, 1, "claw - pivot grab"); //12
 
-        sleep(1000);
-        DriveRobot("right", 24, 0.5, "none");
+        servoClaw1.setPosition(servoClaw1Open);// drop purple pixel
+        sleep(200);
+
+        DriveRobot("backward", 2, 0.5, "none"); // drive robot backwards
+
+        FlipClaw(); // ruby down
+
+        DriveRobot("right", 15, 0.5, "none");
+        DriveRobot("forward", 8, 0.5, "none");
+        RotateRobot(-90);
+
+        servoPivot.setPosition(servoPivotPlacePosition);// tilt claw
+        MoveSlide(650, "up"); // raise arm
+
+
+
+        double[] tagPosition = ReadAprilTag(6);
+
+        if(tagPosition[0] == 0.0)
+        {
+            telemetry.addData("not tag", tagPosition[2]);
+            // no tag detected after rotation
+        }
+        else
+        {
+            double cameraOffset = 5.5; // offset from camera
+            if (tagPosition[0] - cameraOffset > 0)
+            {
+                // move left
+                DriveRobot("left", (tagPosition[0] - cameraOffset) , 0.5, "none");
+            }
+            else
+            {
+                // move right
+                DriveRobot("right", (cameraOffset - tagPosition[0]) - 1, 0.5, "none");
+            }
+        }
+
+        DriveRobot("forward", 10, 0.5, "none");
+
         servoClaw2.setPosition(servoClaw2Open);
+
+        DriveRobot("backward", 5, 1, "none");
+
+        RotateRobot(180);
+
+
+
+        MoveSlide(0, "down");
+        servoRotate.setPosition(servoRotateTop);
+
     }
 
     public void initAprilTag()
