@@ -726,6 +726,9 @@ public class AutonomousRedFar extends OpMode
 
     public void AutonomousMid()
     {
+        double cameraOffsetX = 5.5; // offset from camera
+        double cameraOffsetY = 8.0;
+
         DriveRobot("forward", 2, 0.5, "none");// 5
         DriveRobot("right", 3, 0.5, "none");
         DriveRobot("forward", 16, 1, "claw - pivot grab"); //12
@@ -752,20 +755,20 @@ public class AutonomousRedFar extends OpMode
         }
         else
         {
-            double cameraOffset = 5.5; // offset from camera
-            if (tagPosition[0] - cameraOffset > 0)
+
+            if (tagPosition[0] - cameraOffsetX > 0)
             {
                 // move left
-                DriveRobot("left", (tagPosition[0] - cameraOffset) , 0.5, "none");
+                DriveRobot("left", (tagPosition[0] - cameraOffsetX) , 0.5, "none");
             }
             else
             {
                 // move right
-                DriveRobot("right", (cameraOffset - tagPosition[0]) - 7, 0.5, "none");
+                DriveRobot("right", (cameraOffsetX - tagPosition[0]) - 7, 0.5, "none");
             }
         }
 
-        DriveRobot("forward", 5, 0.5, "none");
+        DriveRobot("forward", tagPosition[1] - cameraOffsetY, 0.5, "none");
 
         servoClaw2.setPosition(servoClaw2Open);
 
