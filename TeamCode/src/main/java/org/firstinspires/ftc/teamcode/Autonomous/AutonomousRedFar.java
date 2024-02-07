@@ -91,7 +91,7 @@ public class AutonomousRedFar extends OpMode
     final double servoPivotPlacePosition = 0.70;
     final double servoPivotRotatePosition = 0.65;
     final double servoPivotDrivePosition = 0.50;
-    final double servoPivotGrabPosition = 0.87; // + lowers angle
+    final double servoPivotGrabPosition = 0.88; // + lowers angle
 
     //top is the side with ruby
     double servoRotateTop = 0.155; // + rotates clockwise
@@ -106,17 +106,32 @@ public class AutonomousRedFar extends OpMode
 
     public String propPosition = "Unknown";
 
-    public int colorMiddleValue = 0;
-    public int colorRightValue = 0;
+    public int countMiddleValue = 0;
+    public int countRightValue = 0;
+
+    double cameraOffsetX = 4; // offset from camera
+    double cameraOffsetY = 6.0;
+
+    double orientationStart;
 
 
+    Mat matLeftCropBlue1 = new Mat();
+    Mat matRightCropBlue1 = new Mat();
+    Mat matLeftCropRed1 = new Mat();
+    Mat matRightCropRed1 = new Mat();
+    Mat matLeftCropRed2 = new Mat();
+    Mat matRightCropRed2 = new Mat();
+    Mat matLeftCrop = new Mat();
+    Mat matRightCrop = new Mat();
+
+    String propColor = "unknown";
 
     public void RobotSetup()
     {
         imu = hardwareMap.get(IMU.class, "imu");
 
         double rotationX = -90;  // control hub X rotation angle
-        double rotationY = -34;  // control hub Y rotation angle
+        double rotationY = -33.8;  // control hub Y rotation angle
         double rotationZ = 180;  // control hub Z rotation angle
 
         Orientation hubRotation = xyzOrientation(rotationX, rotationY, rotationZ);
@@ -156,18 +171,24 @@ public class AutonomousRedFar extends OpMode
         odometryPodLeft = hardwareMap.get(DcMotor.class, "PodLeft");
         odometryPodRight = hardwareMap.get(DcMotor.class, "FrontRight");
         odometryPodBack = hardwareMap.get(DcMotor.class, "FrontLeft");
+
+        motorSlideLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motorSlideRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
     public void DriveRobot(String driveDirection, double driveDistance, double driveSpeed, String runConcurrent)
     {
         int targetLeft;
         int targetBack;
 
+        double driveSpeedOriginal = driveSpeed;
         double driveSpeedLow = 0.3;
         double driveSpeedMiddle = 0.45;
         double driveSpeedFast = 0.6;
-        double driveSpeedDeadZoneLow = 2;
-        double driveSpeedDeadZoneMiddle = 6;
-        double driveSpeedDeadZoneFast = 10;
+        double driveSpeedDeadZoneLow = 4;
+        double driveSpeedDeadZoneMiddle = 8;
+        double driveSpeedDeadZoneFast = 12;
+
+        int driveTimeout = 100000;
 
 
         if(runConcurrent.equalsIgnoreCase("claw - pivot grab"))
@@ -175,6 +196,18 @@ public class AutonomousRedFar extends OpMode
             // Moves claw to grab position
             servoPivot.setPosition(servoPivotGrabPosition);
         }
+        else if(runConcurrent.equalsIgnoreCase("claw - pivot drive"))
+        {
+            // Moves claw to drive position
+            servoPivot.setPosition(servoPivotDrivePosition);
+        }
+        else if(runConcurrent.equalsIgnoreCase("timeout - 2 seconds"))
+        {
+            // Stop moving after 2 seconds or drive distance reached
+            driveTimeout = 2000;
+        }
+
+        runtime.reset();
 
         if(driveDirection.equalsIgnoreCase("backward") || driveDirection.equalsIgnoreCase("left"))
         {
@@ -190,22 +223,41 @@ public class AutonomousRedFar extends OpMode
         telemetry.addData("target", odometryPodLeft.getTargetPosition());
         telemetry.addData("current", odometryPodLeft.getCurrentPosition());
 
+        runtime.reset();
         if(driveDirection.equalsIgnoreCase("forward"))
         {
-            while(odometryPodLeft.getCurrentPosition() < odometryPodLeft.getTargetPosition())
+            while(odometryPodLeft.getCurrentPosition() < odometryPodLeft.getTargetPosition() && runtime.milliseconds() < driveTimeout)
             {
+                if(runtime.milliseconds() < 300)
+                {
+                    // Ease into start
+                    driveSpeed = 0.3;
+                }
+                else
+                {
+                    driveSpeed = driveSpeedOriginal;
+                }
                 //check for dead zone 4 inches from target position.
                 if(odometryPodLeft.getTargetPosition() - odometryPodLeft.getCurrentPosition() < driveSpeedDeadZoneLow * ticksToInch)
                 {
-                    driveSpeed = driveSpeedLow;
+                    if(driveSpeed > driveSpeedLow)
+                    {
+                        driveSpeed = driveSpeedLow;
+                    }
                 }
                 else if(odometryPodLeft.getTargetPosition() - odometryPodLeft.getCurrentPosition() < driveSpeedDeadZoneMiddle * ticksToInch)
                 {
-                    driveSpeed = driveSpeedMiddle;
+                    if(driveSpeed > driveSpeedMiddle)
+                    {
+                        driveSpeed = driveSpeedMiddle;
+                    }
                 }
                 else if(odometryPodLeft.getTargetPosition() - odometryPodLeft.getCurrentPosition() < driveSpeedDeadZoneFast * ticksToInch)
                 {
-                    driveSpeed = driveSpeedFast;
+                    if(driveSpeed > driveSpeedFast)
+                    {
+                        driveSpeed = driveSpeedFast;
+                    }
                 }
 
                 motorFrontLeft.setPower(driveSpeed);
@@ -222,23 +274,43 @@ public class AutonomousRedFar extends OpMode
         else if(driveDirection.equalsIgnoreCase("backward"))
         {
             driveSpeed *= -1;
+            driveSpeedOriginal *= -1;
             driveSpeedLow *= -1;
             driveSpeedMiddle *= -1;
             driveSpeedFast *= -1;
 
-            while(odometryPodLeft.getCurrentPosition() > odometryPodLeft.getTargetPosition())
+            while(odometryPodLeft.getCurrentPosition() > odometryPodLeft.getTargetPosition() && runtime.milliseconds() < driveTimeout)
             {
+                if(runtime.milliseconds() < 300)
+                {
+                    // Ease into start
+                    driveSpeed = -0.3;
+                }
+                else
+                {
+                    driveSpeed = driveSpeedOriginal;
+                }
+
                 if(odometryPodLeft.getCurrentPosition() - odometryPodLeft.getTargetPosition() < driveSpeedDeadZoneLow * ticksToInch)
                 {
-                    driveSpeed = driveSpeedLow;
+                    if(driveSpeed > driveSpeedLow)
+                    {
+                        driveSpeed = driveSpeedLow;
+                    }
                 }
                 else if(odometryPodLeft.getCurrentPosition() - odometryPodLeft.getTargetPosition() < driveSpeedDeadZoneMiddle * ticksToInch)
                 {
-                    driveSpeed = driveSpeedMiddle;
+                    if(driveSpeed > driveSpeedMiddle)
+                    {
+                        driveSpeed = driveSpeedMiddle;
+                    }
                 }
                 else if(odometryPodLeft.getCurrentPosition() - odometryPodLeft.getTargetPosition() < driveSpeedDeadZoneFast * ticksToInch)
                 {
-                    driveSpeed = driveSpeedFast;
+                    if(driveSpeed > driveSpeedFast)
+                    {
+                        driveSpeed = driveSpeedFast;
+                    }
                 }
 
                 motorFrontLeft.setPower(driveSpeed);
@@ -254,25 +326,42 @@ public class AutonomousRedFar extends OpMode
         }
         else if(driveDirection.equalsIgnoreCase("left"))
         {
-            while(odometryPodBack.getCurrentPosition() > odometryPodBack.getTargetPosition())
+
+            while(odometryPodBack.getCurrentPosition() > odometryPodBack.getTargetPosition() && runtime.milliseconds() < driveTimeout)
             {
-                telemetry.addData("target", odometryPodLeft.getTargetPosition());
-                telemetry.addData("current", odometryPodLeft.getCurrentPosition());
-                telemetry.update();
+                if(runtime.milliseconds() < 300)
+                {
+                    // Ease into start
+                    driveSpeed = 0.3;
+                }
+                else
+                {
+                    driveSpeed = driveSpeedOriginal;
+                }
 
                 //check for dead zone very close target position.
                 if(odometryPodBack.getCurrentPosition() - odometryPodBack.getTargetPosition() < driveSpeedDeadZoneLow * ticksToInch)
                 {
+                    if(driveSpeed > driveSpeedLow)
+                    {
+                        driveSpeed = driveSpeedLow;
+                    }
                     driveSpeed = driveSpeedLow;
                 }
                 //check for dead zone close to target position.
                 else if(odometryPodBack.getCurrentPosition() - odometryPodBack.getTargetPosition() < driveSpeedDeadZoneMiddle * ticksToInch)
                 {
-                    driveSpeed = driveSpeedMiddle;
+                    if(driveSpeed > driveSpeedMiddle)
+                    {
+                        driveSpeed = driveSpeedMiddle;
+                    }
                 }
                 else if(odometryPodBack.getCurrentPosition() - odometryPodBack.getTargetPosition() < driveSpeedDeadZoneFast * ticksToInch)
                 {
-                    driveSpeed = driveSpeedFast;
+                    if(driveSpeed > driveSpeedFast)
+                    {
+                        driveSpeed = driveSpeedFast;
+                    }
                 }
 
                 motorFrontLeft.setPower(driveSpeed * -1);
@@ -290,25 +379,39 @@ public class AutonomousRedFar extends OpMode
         }
         else if(driveDirection.equalsIgnoreCase("right"))
         {
-            while(odometryPodBack.getCurrentPosition() < odometryPodBack.getTargetPosition())
+            while(odometryPodBack.getCurrentPosition() < odometryPodBack.getTargetPosition() && runtime.milliseconds() < driveTimeout)
             {
+                if(runtime.milliseconds() < 300)
+                {
+                    // Ease into start
+                    driveSpeed = 0.3;
+                }
+                else
+                {
+                    driveSpeed = driveSpeedOriginal;
+                }
                 //check for dead zone very close to target position.
                 if(odometryPodBack.getTargetPosition() - odometryPodBack.getCurrentPosition() < driveSpeedDeadZoneLow * ticksToInch)
                 {
-                    driveSpeed = driveSpeedLow;
-
-                    telemetry.addLine("mid");
+                    if(driveSpeed > driveSpeedLow)
+                    {
+                        driveSpeed = driveSpeedLow;
+                    }
                 }
                 //check for dead zone close to target position.
                 else if(odometryPodBack.getTargetPosition() - odometryPodBack.getCurrentPosition() < driveSpeedDeadZoneMiddle * ticksToInch)
                 {
-                    driveSpeed = driveSpeedMiddle;
-                    telemetry.addLine("slow");
+                    if(driveSpeed > driveSpeedMiddle)
+                    {
+                        driveSpeed = driveSpeedMiddle;
+                    }
                 }
                 else if(odometryPodBack.getTargetPosition() - odometryPodBack.getCurrentPosition() < driveSpeedDeadZoneFast * ticksToInch)
                 {
-                    driveSpeed = driveSpeedFast;
-                    telemetry.addLine("fast");
+                    if(driveSpeed > driveSpeedFast)
+                    {
+                        driveSpeed = driveSpeedFast;
+                    }
                 }
 
                 telemetry.update();
@@ -323,6 +426,149 @@ public class AutonomousRedFar extends OpMode
             motorFrontRight.setPower(0);
             motorBackLeft.setPower(0);
             motorBackRight.setPower(0);
+        }
+    }
+
+
+    public void RotateToOrientation (double orientationTarget)
+    {
+        // Zero is start orientation
+        orientationTarget = orientationStart + orientationTarget;
+
+        double degreeAllowedError = 0.4;  // allow for error if gyro position not precise enough
+        double motorSpeedFull = 0.5;
+        double motorSpeedFast = 0.35;
+        double motorSpeedSlow = 0.15;
+
+        double orientationCurrent = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+
+        if(orientationCurrent - orientationTarget > 180)
+        {
+            orientationTarget += 360;
+        }
+        else if(orientationTarget - orientationCurrent > 180)
+        {
+            orientationTarget -= 360;
+        }
+
+        telemetry.addData("start", orientationStart);
+        telemetry.addData("target", orientationTarget);
+        telemetry.addData("actual", orientationCurrent);
+        telemetry.update();
+
+        boolean rotationComplete = false;
+
+        boolean rotateOn = true; // for testing (turns on and off wheel motors);
+
+        while (!rotationComplete)
+        {
+            orientationCurrent = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+
+            if (orientationTarget < -180 & orientationCurrent > 90) // gyro flipped from -180 side to +180 side
+            {
+                orientationTarget += 360;
+            }
+            else if (orientationTarget > 180 & orientationCurrent < -90) // gyro flipped from +180 side to -180 side
+            {
+                orientationTarget -= 360;
+            }
+
+            if (orientationCurrent < orientationTarget - 30)
+            {
+                // rotate left full speed
+                if(rotateOn)
+                {
+                    motorFrontLeft.setPower(-1.0 * motorSpeedFull);
+                    motorFrontRight.setPower(motorSpeedFull);
+                    motorBackLeft.setPower(-1.0 * motorSpeedFull);
+                    motorBackRight.setPower(motorSpeedFull);
+                }
+                telemetry.addLine("rotate left full speed");
+            }
+            else if (orientationCurrent > orientationTarget + 30)
+            {
+                // rotate right full speed
+                if(rotateOn)
+                {
+                    motorFrontLeft.setPower(motorSpeedFull);
+                    motorFrontRight.setPower(-1.0 * motorSpeedFull);
+                    motorBackLeft.setPower(motorSpeedFull);
+                    motorBackRight.setPower(-1.0 * motorSpeedFull);
+                }
+                telemetry.addLine("rotate right full speed");
+            }
+            else if (orientationCurrent < orientationTarget - 15)
+            {
+                // rotate left fast
+                if(rotateOn)
+                {
+                    motorFrontLeft.setPower(-1.0 * motorSpeedFast);
+                    motorFrontRight.setPower(motorSpeedFast);
+                    motorBackLeft.setPower(-1.0 * motorSpeedFast);
+                    motorBackRight.setPower(motorSpeedFast);
+                }
+                telemetry.addLine("rotate left fast");
+            }
+            else if (orientationCurrent > orientationTarget + 15)
+            {
+                // rotate right fast
+                if(rotateOn)
+                {
+                    motorFrontLeft.setPower(motorSpeedFast);
+                    motorFrontRight.setPower(-1.0 * motorSpeedFast);
+                    motorBackLeft.setPower(motorSpeedFast);
+                    motorBackRight.setPower(-1.0 * motorSpeedFast);
+                }
+                telemetry.addLine("rotate right fast");
+            }
+            else if (orientationCurrent < orientationTarget - degreeAllowedError)
+            {
+                // rotate left slow
+                if(rotateOn)
+                {
+                    motorFrontLeft.setPower(-1.0 * motorSpeedSlow);
+                    motorFrontRight.setPower(motorSpeedSlow);
+                    motorBackLeft.setPower(-1.0 * motorSpeedSlow);
+                    motorBackRight.setPower(motorSpeedSlow);
+                }
+                telemetry.addLine("rotate left slow");
+            }
+            else if (orientationCurrent > orientationTarget + degreeAllowedError)
+            {
+                // rotate right slow
+                if(rotateOn)
+                {
+                    motorFrontLeft.setPower(motorSpeedSlow);
+                    motorFrontRight.setPower(-1.0 * motorSpeedSlow);
+                    motorBackLeft.setPower(motorSpeedSlow);
+                    motorBackRight.setPower(-1.0 * motorSpeedSlow);
+                }
+                telemetry.addLine("rotate right slow");
+            }
+            else
+            {
+                motorFrontLeft.setPower(0);
+                motorFrontRight.setPower(0);
+                motorBackLeft.setPower(0);
+                motorBackRight.setPower(0);
+                telemetry.addLine("stop rotation");
+                sleep(200);
+
+                orientationCurrent = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+                if (orientationCurrent > orientationTarget - degreeAllowedError && orientationCurrent < orientationTarget + degreeAllowedError)
+                {
+                    // if orientation within error end while loop by setting rotationComplete to true
+
+                    telemetry.addLine("end loop");
+                    rotationComplete = true;
+                }
+            }
+
+
+            telemetry.addData("start", orientationStart);
+            telemetry.addData("target", orientationTarget);
+            telemetry.addData("current", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+            telemetry.update();
         }
     }
 
@@ -453,63 +699,22 @@ public class AutonomousRedFar extends OpMode
             }
         }
     }
-    public void TurnRobot(String turnDirection, int turnAngle, double turnSpeed)
-    {
-        int targetLeft;
-        int targetBack;
-
-        int ticksPerDegree = 32;
-
-        if(turnDirection.equalsIgnoreCase("counter")) // Counter Clockwise
-        {
-            targetBack = odometryPodBack.getCurrentPosition() + (int)(turnAngle * ticksPerDegree);
-
-            motorFrontLeft.setPower(-1 * turnSpeed);
-            motorFrontRight.setPower(turnSpeed);
-            motorBackLeft.setPower(-1 * turnSpeed);
-            motorBackRight.setPower(turnSpeed);
-
-            while(targetBack > odometryPodBack.getCurrentPosition())
-            {
-                telemetry.addData("target", targetBack);
-                telemetry.addData("current", odometryPodBack.getCurrentPosition());
-
-                telemetry.update();
-            }
-
-            motorFrontLeft.setPower(0.0);
-            motorFrontRight.setPower(0.0);
-            motorBackLeft.setPower(0.0);
-            motorBackRight.setPower(0.0);
-        }
-        else if(turnDirection.equalsIgnoreCase("clockwise"))
-        {
-            targetBack = odometryPodBack.getCurrentPosition() - (int)(turnAngle * ticksPerDegree);
-
-            motorFrontLeft.setPower(turnSpeed);
-            motorFrontRight.setPower(-1 * turnSpeed);
-            motorBackLeft.setPower(turnSpeed);
-            motorBackRight.setPower(-1 * turnSpeed);
-
-            while(targetBack < odometryPodBack.getCurrentPosition())
-            {
-                telemetry.addData("target", targetBack);
-                telemetry.addData("current", odometryPodBack.getCurrentPosition());
-
-                telemetry.update();
-            }
-
-            motorFrontLeft.setPower(0.0);
-            motorFrontRight.setPower(0.0);
-            motorBackLeft.setPower(0.0);
-            motorBackRight.setPower(0.0);
-
-        }
-    }
-
     public void MoveSlide(int slideTickPosition, String slideDirection)
     {
+
+        double slideSpeed = 1.0;
         boolean inPosition = false;
+
+        if(slideDirection.equalsIgnoreCase("up slow"))
+        {
+            slideSpeed = 0.5;
+            slideDirection = "up";
+        }
+        else if(slideDirection.equalsIgnoreCase("down slow"))
+        {
+            slideSpeed = 0.3;
+            slideDirection = "down";
+        }
 
         motorSlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         motorSlideRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -520,8 +725,8 @@ public class AutonomousRedFar extends OpMode
             {
                 if ((motorSlideLeft.getCurrentPosition()) < slideTickPosition)
                 {
-                    motorSlideLeft.setPower(1);
-                    motorSlideRight.setPower(1);
+                    motorSlideLeft.setPower(slideSpeed);
+                    motorSlideRight.setPower(slideSpeed);
                 }
                 else
                 {
@@ -532,10 +737,15 @@ public class AutonomousRedFar extends OpMode
             }
             else if(slideDirection.equalsIgnoreCase("down"))
             {
+                if(motorSlideLeft.getCurrentPosition() < 100)
+                {
+                    slideSpeed = 0.25;
+                }
+
                 if ((motorSlideLeft.getCurrentPosition()) > slideTickPosition)
                 {
-                    motorSlideLeft.setPower(-1);
-                    motorSlideRight.setPower(-1);
+                    motorSlideLeft.setPower(slideSpeed * -1.0);
+                    motorSlideRight.setPower(slideSpeed * -1.0);
                 }
                 else
                 {
@@ -552,8 +762,145 @@ public class AutonomousRedFar extends OpMode
         motorSlideRight.setPower(0);
     }
 
+    public double[] ReadAprilTagV2(int tagId, String placePosition)
+    {
+        double[] tagPosition = new double[2]; // return values (if Y 0.0 then failed to find tag)
+        double aprilTagX = 0.0;
+        double aprilTagY = 0.0;
+        boolean tagFound = false;
 
-    public double[] ReadAprilTag(int tagId)
+        double orientationSquareToTag = 0;
+
+        if(tagId >= 1 && tagId <= 6)
+        {
+            orientationSquareToTag = -90;
+        }
+        else if(tagId == 8 || tagId == 9)
+        {
+            orientationSquareToTag = 90;
+        }
+
+        RotateToOrientation(orientationSquareToTag);
+
+        runtime.reset();
+
+        while(tagFound == false && runtime.milliseconds() < 2000)  // allow 2 seconds to find tag
+        {
+            List<AprilTagDetection> currentDetections = aprilTag.getDetections();
+            for (AprilTagDetection detection : currentDetections)
+            {
+                if (detection.metadata != null)
+                {
+                    telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
+                    telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
+                    telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
+                    telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
+
+                    if (detection.id == tagId)
+                    {
+                        tagFound = true;
+                        aprilTagX = detection.ftcPose.x;
+                        aprilTagY = detection.ftcPose.y;
+                    }
+
+                }
+                else
+                {
+                    telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
+                    telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
+                    aprilTagX = 0.0;
+                    aprilTagY = 0.0;
+                }
+            }
+        }
+
+        tagPosition[0] = aprilTagX;
+        tagPosition[1] = aprilTagY;
+
+        if(!placePosition.equalsIgnoreCase("none"))
+        {
+            double distancePlacePosition = 0;
+            double distanceFromSelectedTag = 0;
+
+            if(tagPosition[1] == 0.0)
+            {
+                telemetry.addData("no tag", tagPosition[1]);
+                // no tag detected after rotation
+            }
+            else
+            {
+                servoPivot.setPosition(servoPivotPlacePosition);// tilt claw
+                MoveSlide(650, "up"); // raise arm
+
+                if(tagId == 1 || tagId == 4)
+                {
+                    if(placePosition.equalsIgnoreCase("left"))
+                    {
+                        distanceFromSelectedTag = -3.0;
+                    }
+                    else if(placePosition.equalsIgnoreCase("middle"))
+                    {
+                        distanceFromSelectedTag = 6.0;
+                    }
+                    else if(placePosition.equalsIgnoreCase("right"))
+                    {
+                        distanceFromSelectedTag = 15.0;
+                    }
+                }
+                else if(tagId == 2 || tagId == 5)
+                {
+                    if(placePosition.equalsIgnoreCase("left"))
+                    {
+                        distanceFromSelectedTag = -6.0;
+                    }
+                    else if(placePosition.equalsIgnoreCase("middle"))
+                    {
+                        distanceFromSelectedTag = 0.0;
+                    }
+                    else if(placePosition.equalsIgnoreCase("right"))
+                    {
+                        distanceFromSelectedTag = 9.0;
+                    }
+                }
+                else if(tagId == 3 || tagId == 6)
+                {
+                    if(placePosition.equalsIgnoreCase("left"))
+                    {
+                        distanceFromSelectedTag = -15.0;
+                    }
+                    else if(placePosition.equalsIgnoreCase("middle"))
+                    {
+                        distanceFromSelectedTag = -6.0;
+                    }
+                    else if(placePosition.equalsIgnoreCase("right"))
+                    {
+                        distanceFromSelectedTag = 3.0;
+                    }
+                }
+
+                distancePlacePosition = distanceFromSelectedTag - tagPosition[0] + cameraOffsetX;
+
+                if (distancePlacePosition < 0.0)
+                {
+                    // move left
+                    DriveRobot("left", (distancePlacePosition * -1.0) , 0.5, "none");
+                }
+                else if (distancePlacePosition > 0.0)
+                {
+                    // move right
+                    DriveRobot("right", distancePlacePosition, 0.5, "none");
+                }
+
+                DriveRobot("forward", tagPosition[1] - cameraOffsetY - 1, 0.5, "none");
+
+                servoClaw2.setPosition(servoClaw2Open);
+            }
+        }
+
+        return tagPosition;
+
+    }
+    public double[] ReadAprilTag(int tagId, String placePosition)
     {
         double[] tagPosition = new double[3]; // return values (if Y 0.0 then failed to find tag)
         double aprilTagX = 0.0;
@@ -645,11 +992,89 @@ public class AutonomousRedFar extends OpMode
 
         }
 
-
-
         tagPosition[0] = aprilTagX;
         tagPosition[1] = aprilTagY;
         tagPosition[2] = degSquare;
+
+        if(!placePosition.equalsIgnoreCase("none"))
+        {
+            double distancePlacePosition = 0;
+            double distanceFromSelectedTag = 0;
+
+            if(tagPosition[1] == 0.0)
+            {
+                telemetry.addData("no tag", tagPosition[2]);
+                // no tag detected after rotation
+            }
+            else
+            {
+                servoPivot.setPosition(servoPivotPlacePosition);// tilt claw
+                MoveSlide(650, "up"); // raise arm
+
+                if(tagId == 1 || tagId == 4)
+                {
+                    if(placePosition.equalsIgnoreCase("left"))
+                    {
+                        distanceFromSelectedTag = -3.0;
+                    }
+                    else if(placePosition.equalsIgnoreCase("middle"))
+                    {
+                        distanceFromSelectedTag = 6.0;
+                    }
+                    else if(placePosition.equalsIgnoreCase("right"))
+                    {
+                        distanceFromSelectedTag = 15.0;
+                    }
+                }
+                else if(tagId == 2 || tagId == 5)
+                {
+                    if(placePosition.equalsIgnoreCase("left"))
+                    {
+                        distanceFromSelectedTag = -9.0;
+                    }
+                    else if(placePosition.equalsIgnoreCase("middle"))
+                    {
+                        distanceFromSelectedTag = 0.0;
+                    }
+                    else if(placePosition.equalsIgnoreCase("right"))
+                    {
+                        distanceFromSelectedTag = 9.0;
+                    }
+                }
+                else if(tagId == 3 || tagId == 6)
+                {
+                    if(placePosition.equalsIgnoreCase("left"))
+                    {
+                        distanceFromSelectedTag = -15.0;
+                    }
+                    else if(placePosition.equalsIgnoreCase("middle"))
+                    {
+                        distanceFromSelectedTag = -6.0;
+                    }
+                    else if(placePosition.equalsIgnoreCase("right"))
+                    {
+                        distanceFromSelectedTag = 3.0;
+                    }
+                }
+
+                distancePlacePosition = distanceFromSelectedTag - tagPosition[0] + cameraOffsetX;
+
+                if (distancePlacePosition < 0.0)
+                {
+                    // move left
+                    DriveRobot("left", (distancePlacePosition * -1.0) , 0.5, "none");
+                }
+                else if (distancePlacePosition > 0.0)
+                {
+                    // move right
+                    DriveRobot("right", distancePlacePosition, 0.5, "none");
+                }
+
+                DriveRobot("forward", tagPosition[1] - cameraOffsetY - 2, 0.5, "none");
+
+                servoClaw2.setPosition(servoClaw2Open);
+            }
+        }
 
         return tagPosition;
     }
@@ -710,28 +1135,56 @@ public class AutonomousRedFar extends OpMode
 
     public void AutonomousLeft()
     {
-        DriveRobot("forward", 12, 0.5, "none");
-        TurnRobot("counter", 45, 0.2);
-        DriveRobot("forward", 4, 0.5, "none");
-        servoPivot.setPosition(servoPivotGrabPosition);
-        sleep(500);
-        servoClaw1.setPosition(servoClaw1Open);
-        sleep(1000);
+        DriveRobot("forward", 2, 0.5, "none");// 5
+        DriveRobot("right", 2, 0.5, "none");
+        DriveRobot("forward", 12, 1, "claw - pivot grab");
+        RotateToOrientation(55);
+        DriveRobot("forward", 3, 0.5, "none");
+        //DriveRobot("left", 9, 0.5, "none");
+        //DriveRobot("forward", 8, 1, "claw - pivot grab"); //12
 
-        DriveRobot("backward", 4, 0.5, "none");
-        TurnRobot("clockwise", 45, 0.2);
-        //DriveRobot("right", 34, 0.5);
+        servoClaw1.setPosition(servoClaw1Open);// drop purple pixel
+        sleep(300);
+
+        DriveRobot("backward", 3, 0.5, "none");
+        FlipClaw();
+        RotateToOrientation(-90);
+        DriveRobot("forward", 24, 0.5, "none");
+        DriveRobot("left", 12, 0.5, "none");
+        ReadAprilTagV2(5, "left");
+
+
+
+
+        DriveRobot("backward", 2, 0.5, "none"); // drive robot backwards
+        /*
+        FlipClaw(); // ruby down
+
+
+        DriveRobot("right", 15, 0.5, "none");
+        DriveRobot("forward", 8, 0.5, "none");
+        RotateToOrientation(-90);
+
+        servoPivot.setPosition(servoPivotDrivePosition);// tilt claw up
+
+        double[] tagPosition = ReadAprilTagV2(6, "right");
+
+        DriveRobot("backward", 5, 0.5, "none");
+        RotateToOrientation(-90);
+
+        //RotateRobot(180);
+        */
+        MoveSlide(0, "down");
+        FlipClaw();
+        servoRotate.setPosition(servoRotateTop);
 
     }
 
     public void AutonomousMid()
     {
-        double cameraOffsetX = 5.5; // offset from camera
-        double cameraOffsetY = 8.0;
-
         DriveRobot("forward", 2, 0.5, "none");// 5
         DriveRobot("right", 3, 0.5, "none");
-        DriveRobot("forward", 16, 1, "claw - pivot grab"); //12
+        DriveRobot("forward", 17, 1, "claw - pivot grab"); //12
 
         servoClaw1.setPosition(servoClaw1Open);// drop purple pixel
         sleep(200);
@@ -742,40 +1195,18 @@ public class AutonomousRedFar extends OpMode
 
         DriveRobot("right", 25, 0.5, "none");
         DriveRobot("forward", 2, 0.5, "none");
-        RotateRobot(-90);
+        RotateToOrientation(-90);
 
-        servoPivot.setPosition(servoPivotPlacePosition);// tilt claw
-        MoveSlide(650, "up"); // raise arm
+        servoPivot.setPosition(servoPivotDrivePosition);// tilt claw
 
-        double[] tagPosition = ReadAprilTag(6);
-        if(tagPosition[0] == 0.0)
-        {
-            telemetry.addData("not tag", tagPosition[2]);
-            // no tag detected after rotation
-        }
-        else
-        {
-
-            if (tagPosition[0] - cameraOffsetX > 0)
-            {
-                // move left
-                DriveRobot("left", (tagPosition[0] - cameraOffsetX) , 0.5, "none");
-            }
-            else
-            {
-                // move right
-                DriveRobot("right", (cameraOffsetX - tagPosition[0]) - 7, 0.5, "none");
-            }
-        }
-
-        DriveRobot("forward", tagPosition[1] - cameraOffsetY, 0.5, "none");
-
-        servoClaw2.setPosition(servoClaw2Open);
+        double[] tagPosition = ReadAprilTagV2(6, "middle");
 
         DriveRobot("backward", 5, 1, "none");
 
-        RotateRobot(180);
+        //RotateRobot(180);
 
+
+        MoveSlide(0, "down");
         servoRotate.setPosition(servoRotateTop);
 
         //DriveRobot("left", 24, 1.0, "none");
@@ -798,48 +1229,20 @@ public class AutonomousRedFar extends OpMode
 
         DriveRobot("right", 15, 0.5, "none");
         DriveRobot("forward", 8, 0.5, "none");
-        RotateRobot(-90);
+        RotateToOrientation(-90);
+        DriveRobot("left", 4, 0.5, "none");
 
-        servoPivot.setPosition(servoPivotPlacePosition);// tilt claw
-        MoveSlide(650, "up"); // raise arm
+        servoPivot.setPosition(servoPivotDrivePosition);// tilt claw up
 
+        double[] tagPosition = ReadAprilTagV2(6, "right");
 
+        DriveRobot("backward", 5, 0.5, "none");
+        RotateToOrientation(-90);
 
-        double[] tagPosition = ReadAprilTag(6);
-
-        if(tagPosition[0] == 0.0)
-        {
-            telemetry.addData("not tag", tagPosition[2]);
-            // no tag detected after rotation
-        }
-        else
-        {
-            double cameraOffset = 5.5; // offset from camera
-            if (tagPosition[0] - cameraOffset > 0)
-            {
-                // move left
-                DriveRobot("left", (tagPosition[0] - cameraOffset) , 0.5, "none");
-            }
-            else
-            {
-                // move right
-                DriveRobot("right", (cameraOffset - tagPosition[0]) - 1, 0.5, "none");
-            }
-        }
-
-        DriveRobot("forward", 10, 0.5, "none");
-
-        servoClaw2.setPosition(servoClaw2Open);
-
-        DriveRobot("backward", 5, 1, "none");
-
-        RotateRobot(180);
-
-
+        //RotateRobot(180);
 
         MoveSlide(0, "down");
         servoRotate.setPosition(servoRotateTop);
-
     }
 
     public void initAprilTag()
@@ -857,124 +1260,6 @@ public class AutonomousRedFar extends OpMode
             visionPortal = VisionPortal.easyCreateWithDefaults(BuiltinCameraDirection.BACK, aprilTag);
         }
     }   // end method initAprilTag()
-
-    /**
-     * Add telemetry about AprilTag detections.
-     */
-    public void telemetryAprilTag()
-    {
-        List<AprilTagDetection> currentDetections = aprilTag.getDetections();
-        telemetry.addData("# AprilTags Detected", currentDetections.size());
-
-        // Step through the list of detections and display info for each one.
-        for (AprilTagDetection detection : currentDetections)
-        {
-            if (detection.metadata != null)
-            {
-                telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
-                telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
-                telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
-                telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
-
-
-
-                if (detection.id == 6)
-                {
-                    YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-
-                    tagDetected = true;
-                    degSquare = detection.ftcPose.yaw;
-                    tagDistance = detection.ftcPose.y;
-                    gyroAngle = orientation.getYaw(AngleUnit.DEGREES);
-                    if (angleCorrecting == false)
-                    {
-                        targetAngle = gyroAngle - degSquare;
-                        if (gyroAngle < targetAngle - 1 || gyroAngle > targetAngle + 1)
-                        {
-                            angleCorrecting = true;
-                        }
-                    }
-                }
-
-
-            }
-            else {
-                telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
-                telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
-
-                motorFrontLeft.setPower(0);
-                motorFrontRight.setPower(0);
-                motorBackLeft.setPower(0);
-                motorBackRight.setPower(0);
-            }
-
-        }
-        if (angleCorrecting)
-        {
-            if (gyroAngle < targetAngle - 8)
-            {
-                motorFrontLeft.setPower(-0.3);
-                motorFrontRight.setPower(0.3);
-                motorBackLeft.setPower(-0.3);
-                motorBackRight.setPower(0.3);
-            }
-            else if (gyroAngle < targetAngle - 1)
-            {
-                motorFrontLeft.setPower(-0.1);
-                motorFrontRight.setPower(0.1);
-                motorBackLeft.setPower(-0.1);
-                motorBackRight.setPower(0.1);
-            }
-            else if (gyroAngle > targetAngle + 1)
-            {
-                motorFrontLeft.setPower(0.1);
-                motorFrontRight.setPower(-0.1);
-                motorBackLeft.setPower(0.1);
-                motorBackRight.setPower(-0.1);
-            }
-            else if (gyroAngle > targetAngle + 8)
-            {
-                motorFrontLeft.setPower(0.8);
-                motorFrontRight.setPower(-0.8);
-                motorBackLeft.setPower(0.8);
-                motorBackRight.setPower(-0.8);
-            }
-            else
-            {
-                motorFrontLeft.setPower(0);
-                motorFrontRight.setPower(0);
-                motorBackLeft.setPower(0);
-                motorBackRight.setPower(0);
-                angleCorrecting = false;
-            }
-        }
-        else
-        {
-            motorFrontLeft.setPower(0);
-            motorFrontRight.setPower(0);
-            motorBackLeft.setPower(0);
-            motorBackRight.setPower(0);
-        }
-
-        if (currentDetections == null)
-        {
-            motorFrontLeft.setPower(0);
-            motorFrontRight.setPower(0);
-            motorBackLeft.setPower(0);
-            motorBackRight.setPower(0);
-        }
-
-
-        telemetry.addLine("\nkey:\nXYZ = X (Right), Y (Forward), Z (Up) dist.");
-        telemetry.addLine("PRY = Pitch, Roll & Yaw (XYZ Rotation)");
-        telemetry.addLine("RBE = Range, Bearing & Elevation");
-
-        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-
-        telemetry.addData("Yaw (Z)", "%.2f Deg. (Heading)", orientation.getYaw(AngleUnit.DEGREES));
-        telemetry.addData("target", targetAngle);
-        telemetry.update();
-    }
 
     public void init()
     {
@@ -1013,6 +1298,7 @@ public class AutonomousRedFar extends OpMode
 
     public void start()
     {
+        orientationStart = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
 
         motorSlideLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motorSlideLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -1044,41 +1330,83 @@ public class AutonomousRedFar extends OpMode
         }
         else if(propPosition.equalsIgnoreCase("test"))
         {
+            DriveRobot("forward", 18.0, 0.6, "claw - pivot drive");
+            RotateToOrientation(90);
 
-            double[] tagPosition = ReadAprilTag(9);
+            DriveRobot("forward", 6.0, 0.6, "none");
+
+            double[] tagPosition = ReadAprilTagV2(9, "none");
 
             telemetry.addData("position0", tagPosition[0]);
             telemetry.addData("position1", tagPosition[1]);
-            telemetry.addData("position2", tagPosition[2]);
 
-            if(tagPosition[0] == 0.0)
+            if(tagPosition[1] == 0.0)
             {
-                telemetry.addData("not tag", tagPosition[2]);
+                telemetry.addData("no tag", tagPosition[1]);
                 // no tag detected after rotation
             }
             else
             {
-                double cameraOffset = 5.5; // offset from camera
-                if (tagPosition[0] - cameraOffset > 0)
+                if (tagPosition[0] - cameraOffsetX > 0)
                 {
                     // move left
-                    DriveRobot("left", tagPosition[0] - cameraOffset, 0.5, "none");
+                    DriveRobot("left", tagPosition[0] - cameraOffsetX, 0.5, "none");
                 }
                 else
                 {
                     // move right
-                    DriveRobot("right", cameraOffset - tagPosition[0], 0.5, "none");
+                    DriveRobot("right", (tagPosition[0] - cameraOffsetX) * -1.0, 0.5, "none");
                 }
+
+
+                servoPivot.setPosition(servoPivotGrabPosition);// tilt claw
+                servoClaw1.setPosition(servoClaw1Open);
+                servoClaw2.setPosition(servoClaw2Open);
+
+                MoveSlide(295, "up slow");
+                sleep(400);
+                DriveRobot("forward", tagPosition[1] - cameraOffsetY - 6.5, 0.3,"none");
+                sleep(400);
+                servoClaw1.setPosition(servoClaw1Closed);
+                sleep(400);
+                FlipClaw();
+                sleep(400);
+                MoveSlide(265, "down slow");
+                sleep(400);
+                servoClaw2.setPosition(servoClaw2Closed);
+                sleep(400);
+                DriveRobot("backward", 5.0, 0.3,"claw - pivot drive");
+                sleep(400);
+                FlipClaw();
+
+                MoveSlide(0, "down slow");
+                sleep(400);
+
+                motorSlideLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                motorSlideRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
             }
 
             telemetry.addData("x", tagPosition[0]);
             telemetry.addData("y", tagPosition[1]);
-            telemetry.addData("deg", tagPosition[2]);
             telemetry.update();
+
 
             //RotateRobot(180);
         }
-
+        else if(propPosition.equalsIgnoreCase("test2"))
+        {
+            RotateToOrientation(90);
+            sleep(500);
+            RotateToOrientation(-150);
+            //sleep(3000);
+            //RotateToOrientation(180);
+            sleep(500);
+            RotateToOrientation(0);
+            sleep(500);
+            telemetry.addData("start", orientationStart);
+            telemetry.addData("current", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+        }
     }
 
     public void loop()
@@ -1096,6 +1424,13 @@ public class AutonomousRedFar extends OpMode
         Mat outPut = new Mat();
 
         Scalar color = new Scalar(255.0, 0.0, 0.0);
+        Scalar colorBlueLower1 = new Scalar(78, 158, 0);
+        Scalar colorBlueUpper1 = new Scalar(138, 255, 255);
+
+        Scalar colorRedLower1 = new Scalar(0, 50, 50);
+        Scalar colorRedUpper1 = new Scalar(10, 255, 255);
+        Scalar colorRedLower2 = new Scalar(175, 50, 20);
+        Scalar colorRedUpper2 = new Scalar (180, 255, 255);
 
         public Mat processFrame(Mat input)
         {
@@ -1110,39 +1445,98 @@ public class AutonomousRedFar extends OpMode
             Imgproc.rectangle(outPut, rectLeft, color, 2);
             Imgproc.rectangle(outPut, rectRight, color, 2);
 
-            Mat matLeftCrop = YCbCr.submat(rectLeft);
-            Mat matRightCrop = YCbCr.submat(rectRight);
+            matLeftCrop = YCbCr.submat(rectLeft);
+            matRightCrop = YCbCr.submat(rectRight);
 
-            Core.extractChannel(matLeftCrop, matLeftCrop, 2);
-            Core.extractChannel(matRightCrop, matRightCrop, 2);
+            Core.inRange(matLeftCrop, colorBlueLower1, colorBlueUpper1, matLeftCropBlue1);
+            Core.inRange(matRightCrop, colorBlueLower1, colorBlueUpper1, matRightCropBlue1);
 
-            Scalar colorLeftAvg = Core.mean(matLeftCrop);
-            Scalar colorRightAvg = Core.mean(matRightCrop);
+            Core.bitwise_not(matLeftCropBlue1, matLeftCropBlue1);
+            Core.bitwise_not(matRightCropBlue1, matRightCropBlue1);
 
-            telemetry.addData("middleVal", (int)colorLeftAvg.val[0]);
-            telemetry.addData("rightVal", (int)colorRightAvg.val[0]);
+            Core.inRange(matLeftCrop, colorRedLower1, colorRedUpper1, matLeftCropRed1);
+            Core.inRange(matRightCrop, colorRedLower1, colorRedUpper1, matRightCropRed1);
+            Core.inRange(matLeftCrop, colorRedLower2, colorRedUpper2, matLeftCropRed2);
+            Core.inRange(matRightCrop, colorRedLower2, colorRedUpper2, matRightCropRed2);
 
-            if (colorMiddleValue == 0 && runtime.milliseconds() > 8000)
+            Core.bitwise_not(matLeftCropRed1, matLeftCropRed1);
+            Core.bitwise_not(matRightCropRed1, matRightCropRed1);
+            Core.bitwise_not(matLeftCropRed2, matLeftCropRed2);
+            Core.bitwise_not(matRightCropRed2, matRightCropRed2);
+
+            int countMiddleBlue = 90000 - Core.countNonZero(matLeftCropBlue1);
+            int countRightBlue = 90000 - Core.countNonZero(matRightCropBlue1);
+
+            int countMiddleRed = 180000 - Core.countNonZero(matLeftCropRed1) - Core.countNonZero(matLeftCropRed2);
+            int countRightRed = 180000 - Core.countNonZero(matRightCropRed1) - Core.countNonZero(matRightCropRed2);
+
+            int countMiddle = 0;
+            int countRight = 0;
+
+            if (countMiddleValue == 0 && runtime.milliseconds() > 6000)
             {
-                colorMiddleValue = (int)colorLeftAvg.val[0];
-                colorRightValue = (int)colorRightAvg.val[0];
+                if(countMiddleRed > countMiddleBlue)
+                {
+                    // Red Prop
+                    propColor = "red";
+                    countMiddleValue = countMiddleRed;
+                    countRightValue = countRightRed;
+                }
+                else
+                {
+                    // Blue Prop
+                    propColor = "blue";
+                    countMiddleValue = countMiddleBlue;
+                    countRightValue = countRightBlue;
+                }
             }
-            else if ((colorMiddleValue < (int) colorLeftAvg.val[0] + 10) && (colorMiddleValue > (int) colorLeftAvg.val[0] - 10))
+
+            if (propColor != "unknown")
             {
-                propPosition = "middle";
-            }
-            else if ((colorRightValue < (int) colorRightAvg.val[0] - 10) || (colorRightValue > (int) colorRightAvg.val[0] + 10))
-            {
-                propPosition = "right";
+                if (propColor == "red")
+                {
+                    countMiddle = countMiddleRed;
+                    countRight = countRightRed;
+                }
+                else
+                {
+                    countMiddle = countMiddleBlue;
+                    countRight = countRightBlue;
+                }
+
+                if ((countMiddle - countMiddleValue < 2500 && countMiddle - countMiddleValue > -2500))
+                {
+                    propPosition = "middle";
+                }
+                else if (countRight - countRightValue > 2500 || countRight - countRightValue < -2500)
+                {
+                    propPosition = "right";
+                }
+                else
+                {
+                    propPosition = "left";
+                }
             }
             else
             {
-                propPosition = "left";
+                propPosition = "unknown";
             }
-            telemetry.addData("middlestart", colorMiddleValue);
-            telemetry.addData("rightstart", colorRightValue);
-            telemetry.addData(("propPosition"), propPosition);
 
+            telemetry.addData(("Prop Position"), propPosition + " - " + propColor);
+            if(propPosition == "unknown")
+            {
+                telemetry.addData("Calculating Middle Value", countMiddle);
+                telemetry.addData("Calculating Middle Value", countRight);
+            }
+            else
+            {
+                telemetry.addData("Initial Middle Value", countMiddleValue);
+                telemetry.addData("Initial Right Value", countRightValue);
+                telemetry.addData("Middle Change", countMiddle - countMiddleValue);
+                telemetry.addData("Right Change", countRight - countRightValue);
+                telemetry.addLine("*** Safe to Start ***");
+            }
+            //telemetry.update();
             return(outPut);
         }
     }
