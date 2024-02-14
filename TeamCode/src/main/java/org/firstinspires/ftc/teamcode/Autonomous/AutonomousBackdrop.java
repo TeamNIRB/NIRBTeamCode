@@ -1142,7 +1142,7 @@ public class AutonomousBackdrop extends OpMode
         DriveRobot("forward", 3, 0.5, "none");
 
         servoClaw1.setPosition(servoClaw1Open);// drop purple pixel
-        sleep(300);
+        sleep(200);
 
         DriveRobot("backward", 3, 0.5, "none");
         FlipClaw();
@@ -1278,7 +1278,7 @@ public class AutonomousBackdrop extends OpMode
         DriveRobot("forward", 2, 0.5, "none");
 
         servoClaw1.setPosition(servoClaw1Open);// drop purple pixel
-        sleep(300);
+        sleep(200);
 
         DriveRobot("backward", 2, 0.5, "none");
         FlipClaw();
