@@ -842,7 +842,7 @@ public class AutonomousAudience extends OpMode
                     {
                         distanceFromSelectedTag = 0.0;
                     }
-                    else if(placePosition.equalsIgnoreCase("middle"))
+                    else if(placePosition.equalsIgnoreCase("middle") || placePosition.equalsIgnoreCase("middle special"))
                     {
                         distanceFromSelectedTag = 6.0;
                     }
@@ -855,13 +855,13 @@ public class AutonomousAudience extends OpMode
                 {
                     if(placePosition.equalsIgnoreCase("left"))
                     {
-                        distanceFromSelectedTag = -9.0;//-6.0 before
+                        distanceFromSelectedTag = -6.0;//-6.0 before
                     }
                     else if(placePosition.equalsIgnoreCase("left special"))
                     {
                         distanceFromSelectedTag = -5.0;
                     }
-                    else if(placePosition.equalsIgnoreCase("middle"))
+                    else if(placePosition.equalsIgnoreCase("middle") || placePosition.equalsIgnoreCase("middle special"))
                     {
                         distanceFromSelectedTag = 0.0;
                     }
@@ -874,15 +874,15 @@ public class AutonomousAudience extends OpMode
                 {
                     if(placePosition.equalsIgnoreCase("left"))
                     {
-                        distanceFromSelectedTag = -15.0;
+                        distanceFromSelectedTag = -14.0;
                     }
                     else if(placePosition.equalsIgnoreCase("left special"))
                     {
                         distanceFromSelectedTag = -12.0;
                     }
-                    else if(placePosition.equalsIgnoreCase("middle"))
+                    else if(placePosition.equalsIgnoreCase("middle") || placePosition.equalsIgnoreCase("middle special"))
                     {
-                        distanceFromSelectedTag = -6.0;
+                        distanceFromSelectedTag = -5.5;
                     }
                     else if(placePosition.equalsIgnoreCase("right"))
                     {
@@ -905,7 +905,7 @@ public class AutonomousAudience extends OpMode
 
                 DriveRobot("forward", tagPosition[1] - cameraOffsetY - 1, 0.5, "none");
 
-                if(placePosition.equalsIgnoreCase("left special"))
+                if(placePosition.equalsIgnoreCase("left special") || placePosition.equalsIgnoreCase("middle special"))
                 {
                     servoClaw1.setPosition(servoClaw1Open);
                 }
@@ -1155,29 +1155,63 @@ public class AutonomousAudience extends OpMode
     public void AutonomousLeftRed()
     {
         DriveRobot("forward", 2, 0.5, "none");// 5
-        DriveRobot("right", 9, 0.5, "none");
-        DriveRobot("forward", 8, 1, "claw - pivot grab"); //12
+        DriveRobot("left", 12, 0.5, "none");
+        DriveRobot("forward", 18, 1, "claw - pivot grab"); //12
 
         servoClaw1.setPosition(servoClaw1Open);// drop purple pixel
         sleep(200);
 
-        DriveRobot("backward", 2, 0.5, "none"); // drive robot backwards
+        DriveRobot("backward", 1, 0.5, "none"); // drive robot backwards
+        DriveRobot("left", 3, 0.5, "none");
 
-        FlipClaw(); // ruby down
+        RotateToOrientation(90);
 
-        DriveRobot("right", 15, 0.5, "none");
-        DriveRobot("forward", 8, 0.5, "none");
+        DriveRobot("right", 3, 0.5, "claw - pivot drive");
+        sleep(200);
+
+        double[] tagPosition = ReadAprilTagV2(8, "none");
+
+        if (tagPosition[0] - cameraOffsetX > 0)
+        {
+            // move left
+            DriveRobot("left", tagPosition[0] - cameraOffsetX, 0.5, "none");
+        }
+        else
+        {
+            // move right
+            DriveRobot("right", (tagPosition[0] - cameraOffsetX) * -1.0, 0.5, "none");
+        }
+
+        servoPivot.setPosition(servoPivotGrabPosition);// tilt claw
+        servoClaw1.setPosition(servoClaw1Open);
+
+        MoveSlide(295, "up slow");
+        sleep(400);
+        DriveRobot("forward", tagPosition[1] - cameraOffsetY - 6, 0.3,"none");
+        sleep(400);
+        servoClaw1.setPosition(servoClaw1Closed);
+        sleep(400);
+        DriveRobot("backward", 15, 0.5, "none");
+
+        MoveSlide(0, "down slow");
+        FlipClaw();
+        DriveRobot("right", 28, 1, "claw - pivot drive");
+        DriveRobot("backward", 54, 1, "none");
+        DriveRobot("left", 28, 1, "claw - pivot grab");
+
         RotateToOrientation(-90);
-        DriveRobot("left", 4, 0.5, "none");
+        tagPosition = ReadAprilTagV2(5, "left");
+        sleep(200);
+        DriveRobot("backward", 5, 0.5, "claw - pivot drive");
+        DriveRobot("right", 2, 0.5, "none");
+        FlipClaw();
 
-        servoPivot.setPosition(servoPivotDrivePosition);// tilt claw up
+        tagPosition = ReadAprilTagV2(5, "middle special");
 
-        double[] tagPosition = ReadAprilTagV2(6, "right");
+        sleep(200);
 
         DriveRobot("backward", 2, 0.5, "none");
         MoveSlide(0, "down");
-        servoRotate.setPosition(servoRotateTop);
-
     }
 
     public void AutonomousMidRed()
@@ -1191,12 +1225,9 @@ public class AutonomousAudience extends OpMode
 
         DriveRobot("backward", 2, 0.5, "none"); // drive robot backwards
 
-        //FlipClaw(); // ruby down
-
         DriveRobot("left", 12, 0.5, "none");
         //DriveRobot("forward", 2, 0.5, "none");
         RotateToOrientation(90);
-        //FlipClaw();
 
         servoPivot.setPosition(servoPivotDrivePosition);// tilt claw
 
@@ -1213,19 +1244,18 @@ public class AutonomousAudience extends OpMode
             DriveRobot("right", (tagPosition[0] - cameraOffsetX) * -1.0, 0.5, "none");
         }
 
-
         servoPivot.setPosition(servoPivotGrabPosition);// tilt claw
         servoClaw1.setPosition(servoClaw1Open);
 
         MoveSlide(295, "up slow");
         sleep(400);
-        DriveRobot("forward", tagPosition[1] - cameraOffsetY - 6.5, 0.3,"none");
+        DriveRobot("forward", tagPosition[1] - cameraOffsetY - 6, 0.3,"none");
         sleep(400);
         servoClaw1.setPosition(servoClaw1Closed);
         sleep(400);
         DriveRobot("backward", 2, 0.5, "none");
 
-        MoveSlide(0, "down");
+        MoveSlide(0, "down slow");
         FlipClaw();
         DriveRobot("right", 28, 1, "claw - pivot drive");
         DriveRobot("backward", 72, 1, "none");
@@ -1242,6 +1272,7 @@ public class AutonomousAudience extends OpMode
 
         sleep(200);
         DriveRobot("backward", 2, 0.5, "none");
+        MoveSlide(0, "down");
 
     }
 
@@ -1252,23 +1283,57 @@ public class AutonomousAudience extends OpMode
         DriveRobot("left", 2, 0.5, "none");
         DriveRobot("forward", 12, 1, "claw - pivot grab");
         RotateToOrientation(-55);
-        DriveRobot("forward", 3, 0.5, "none");
+        DriveRobot("forward", 2, 0.5, "none");
 
         servoClaw1.setPosition(servoClaw1Open);// drop purple pixel
-        sleep(300);
+        sleep(200);
 
-        DriveRobot("backward", 3, 0.5, "none");
+        DriveRobot("backward", 6, 0.5, "none");
+        RotateToOrientation(90);
+        DriveRobot("right", 6, 0.5, "claw - pivot drive");
+
+        DriveRobot("forward", 6, 0.5, "none");
+
+        double[] tagPosition = ReadAprilTagV2(8, "none");
+
+        if (tagPosition[0] - cameraOffsetX > 0)
+        {
+            // move left
+            DriveRobot("left", tagPosition[0] - cameraOffsetX, 0.5, "none");
+        }
+        else
+        {
+            // move right
+            DriveRobot("right", (tagPosition[0] - cameraOffsetX) * -1.0, 0.5, "none");
+        }
+
+        servoPivot.setPosition(servoPivotGrabPosition);// tilt claw
+        servoClaw1.setPosition(servoClaw1Open);
+
+        MoveSlide(295, "up slow");
+        sleep(400);
+        DriveRobot("forward", tagPosition[1] - cameraOffsetY - 6, 0.3,"none");
+        sleep(400);
+        servoClaw1.setPosition(servoClaw1Closed);
+        sleep(400);
+        DriveRobot("backward", 2, 0.5, "none");
+
+        MoveSlide(0, "down slow");
         FlipClaw();
-        RotateToOrientation(-90);
-        DriveRobot("forward", 24, 0.5, "none");
-        DriveRobot("left", 12, 0.5, "none");
-        ReadAprilTagV2(5, "left");
-
-        DriveRobot("backward", 2, 0.5, "none"); // drive robot backwards
-        MoveSlide(0, "down");
-        FlipClaw();
-
         DriveRobot("right", 28, 1, "claw - pivot drive");
+        DriveRobot("backward", 72, 1, "none");
+        DriveRobot("left", 28, 1, "claw - pivot grab");
+
+        RotateToOrientation(-90);
+        tagPosition = ReadAprilTagV2(5, "right");
+        sleep(200);
+        DriveRobot("backward", 5, 0.5, "none");
+        DriveRobot("left", 2, 0.5, "none");
+        FlipClaw();
+        DriveRobot("left", 6, 0.5, "none");
+
+        tagPosition = ReadAprilTagV2(6, "middle special");
+        sleep(200);
         DriveRobot("backward", 2, 0.5, "none");
         MoveSlide(0, "down");
 
@@ -1277,57 +1342,125 @@ public class AutonomousAudience extends OpMode
     public void AutonomousLeftBlue()
     {
         DriveRobot("forward", 2, 0.5, "none");// 5
-        DriveRobot("left", 12, 0.5, "none");
-        DriveRobot("forward", 8, 1, "claw - pivot grab"); //12
+        DriveRobot("right", 2, 0.5, "none");
+        DriveRobot("forward", 12, 1, "claw - pivot grab");
+        RotateToOrientation(-125);
+        DriveRobot("forward", 2, 0.5, "none");
+
+        servoClaw1.setPosition(servoClaw1Open);// drop purple pixel
+        sleep(200);
+
+        DriveRobot("backward", 6, 0.5, "none");
+        RotateToOrientation(90);
+        DriveRobot("left", 16, 0.5, "claw - pivot drive");
+
+        //DriveRobot("forward", 6, 0.5, "none");
+
+        double[] tagPosition = ReadAprilTagV2(9, "none");
+
+        if (tagPosition[0] - cameraOffsetX > 0)
+        {
+            // move left
+            DriveRobot("left", tagPosition[0] - cameraOffsetX, 0.5, "none");
+        }
+        else
+        {
+            // move right
+            DriveRobot("right", (tagPosition[0] - cameraOffsetX) * -1.0, 0.5, "none");
+        }
+
+        servoPivot.setPosition(servoPivotGrabPosition);// tilt claw
+        servoClaw1.setPosition(servoClaw1Open);
+
+        MoveSlide(295, "up slow");
+        sleep(400);
+        DriveRobot("forward", tagPosition[1] - cameraOffsetY - 6, 0.3,"none");
+        sleep(400);
+        servoClaw1.setPosition(servoClaw1Closed);
+        sleep(400);
+        DriveRobot("backward", 2, 0.5, "none");
+        sleep(200);
+        MoveSlide(0, "down slow");
+        FlipClaw();
+        DriveRobot("left", 28, 1, "claw - pivot drive");
+        DriveRobot("backward", 72, 1, "none");
+        DriveRobot("right", 28, 1, "claw - pivot grab");
+
+        RotateToOrientation(-90);
+        tagPosition = ReadAprilTagV2(3, "left");
+        sleep(200);
+        DriveRobot("backward", 5, 0.5, "claw - pivot drive");
+        DriveRobot("left", 2, 0.5, "none");
+        FlipClaw();
+        DriveRobot("right", 6, 0.5, "none");
+        tagPosition = ReadAprilTagV2(2, "middle special");
+
+        sleep(200);
+        DriveRobot("backward", 2, 0.5, "none");
+        MoveSlide(0, "down");
+
+    }
+
+    public void AutonomousMidBlue()
+    {
+        //DriveRobot("forward", 2, 0.5, "none");// 5
+       //DriveRobot("right", 3, 0.5, "none");
+        DriveRobot("forward", 20, 1, "claw - pivot grab"); //12
 
         servoClaw1.setPosition(servoClaw1Open);// drop purple pixel
         sleep(200);
 
         DriveRobot("backward", 2, 0.5, "none"); // drive robot backwards
 
-        FlipClaw(); // ruby down
-
-        DriveRobot("left", 15, 0.5, "none");
-        DriveRobot("forward", 8, 0.5, "none");
-        RotateToOrientation(-90);
-        DriveRobot("left", 2, 0.5, "none");
-
-        servoPivot.setPosition(servoPivotDrivePosition);// tilt claw up
-
-        double[] tagPosition = ReadAprilTagV2(2, "left");
-
-        DriveRobot("backward", 2, 0.5, "none");
-        MoveSlide(0, "down");
-        FlipClaw();
-        servoRotate.setPosition(servoRotateTop);
-    }
-
-    public void AutonomousMidBlue()
-    {
-        DriveRobot("forward", 2, 0.5, "none");// 5
-        DriveRobot("left", 3, 0.5, "none");
-        DriveRobot("forward", 19, 1, "claw - pivot grab"); //12
-
-        servoClaw1.setPosition(servoClaw1Open);// drop purple pixel
-        sleep(200);
-
-        DriveRobot("backward", 6, 0.5, "none"); // drive robot backwards
-
-        FlipClaw(); // ruby down
-        servoPivot.setPosition(servoPivotDrivePosition);
-
-        DriveRobot("left", 25, 0.5, "none");
-        DriveRobot("forward", 2, 0.5, "none");
-        RotateToOrientation(-90);
-
+        DriveRobot("right", 12, 0.5, "none");
+        //DriveRobot("forward", 2, 0.5, "none");
+        RotateToOrientation(90);
+        DriveRobot("left", 8, 0.5, "none");
         servoPivot.setPosition(servoPivotDrivePosition);// tilt claw
 
-        double[] tagPosition = ReadAprilTagV2(2, "middle");
+        double[] tagPosition = ReadAprilTagV2(9, "none");
 
+        if (tagPosition[0] - cameraOffsetX > 0)
+        {
+            // move left
+            DriveRobot("left", tagPosition[0] - cameraOffsetX, 0.5, "none");
+        }
+        else
+        {
+            // move right
+            DriveRobot("right", (tagPosition[0] - cameraOffsetX) * -1.0, 0.5, "none");
+        }
+
+        servoPivot.setPosition(servoPivotGrabPosition);// tilt claw
+        servoClaw1.setPosition(servoClaw1Open);
+
+        MoveSlide(295, "up slow");
+        sleep(400);
+        DriveRobot("forward", tagPosition[1] - cameraOffsetY - 6, 0.3,"none");
+        sleep(400);
+        servoClaw1.setPosition(servoClaw1Closed);
+        sleep(400);
+        DriveRobot("backward", 2, 0.5, "none");
+        sleep(200);
+        MoveSlide(0, "down slow");
+        FlipClaw();
+        DriveRobot("left", 28, 1, "claw - pivot drive");
+        DriveRobot("backward", 72, 1, "none");
+        DriveRobot("right", 28, 1, "claw - pivot grab");
+
+        RotateToOrientation(-90);
+        tagPosition = ReadAprilTagV2(3, "middle");
+        sleep(200);
+        DriveRobot("backward", 5, 0.5, "claw - pivot drive");
+        DriveRobot("left", 2, 0.5, "none");
+        FlipClaw();
+
+        tagPosition = ReadAprilTagV2(2, "left special");
+
+        sleep(200);
         DriveRobot("backward", 2, 0.5, "none");
         MoveSlide(0, "down");
-        FlipClaw();
-        servoRotate.setPosition(servoRotateTop);
+
     }
 
     public void AutonomousRightBlue()
