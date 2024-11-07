@@ -22,9 +22,9 @@ public class MecanumDrive extends LinearOpMode {
     private DcMotor BackRight;
     private DcMotor FrontRight;
     private DcMotor PivotMotor;
-    private DcMotor Actuator;
     private DcMotor SlideLeft;
     private DcMotor SlideRight;
+    private Servo Actuator;
     private Servo RotateClaw;
     private Servo ClawServo;
     
@@ -38,6 +38,9 @@ public class MecanumDrive extends LinearOpMode {
     float rightStickX;
     float rightBumper;
     float leftBumper;
+    float leftStickY2;
+    float buttonA;
+    float buttonY;
     
     double motorSpeed; //Controlls the speed of the motors throughout the program
     double armSpeed; //Controlls the speed of the arm throughout the program
@@ -51,10 +54,13 @@ public class MecanumDrive extends LinearOpMode {
         
         leftStickY = gamepad1.left_stick_y;
         leftStickX = gamepad1.left_stick_x;
-        rightStickY = gamepad2.right_stick_y;
         rightStickX = gamepad1.right_stick_x;
+        rightStickY = gamepad2.right_stick_y;
+        leftStickY2 = gamepad2.left_stick_y;
         rightBumper = (gamepad2.right_bumper) ? 1 : 0;
         leftBumper = (gamepad2.left_bumper) ? 1 : 0;
+        buttonY = (gamepad2.y) ? 1 : 0;
+        buttonA = (gamepad2.a) ? 1 : 0;
         
         /*
         Bolean logic for the mecanum drive
@@ -64,6 +70,17 @@ public class MecanumDrive extends LinearOpMode {
         FrontLeft.setPower((leftStickY + rightStickX + leftStickX) * motorSpeed);
         BackRight.setPower((leftStickY + rightStickX - leftStickX) * motorSpeed);
         FrontRight.setPower((leftStickY - rightStickX - leftStickX) * motorSpeed);
+
+        
+        
+         if(leftStickY2 < 0)
+        {
+            Actuator.setPower(leftStickY2);
+        }
+        else if(rightStickY > 0)
+        {
+            Actuator.setPower(leftStickY2);
+        }
         
         if(rightStickY < 0)
         {
@@ -93,6 +110,14 @@ public class MecanumDrive extends LinearOpMode {
             ClawServo.setPosition(0.1);
             
         }
+
+        if (buttonY == 1) {
+            PivotMotor.setPosition(1);
+        }
+
+        if (buttonA == 1) {
+            PivotMotor.setPosition(-1);
+        }
         
    }
    
@@ -110,7 +135,7 @@ public class MecanumDrive extends LinearOpMode {
         FrontRight = hardwareMap.get(DcMotor.class, "FrontRight");
         SlideLeft = hardwareMap.get(DcMotor.class, "SlideLeft");
         SlideRight = hardwareMap.get(DcMotor.class, "SlideRight");
-        Actuator = hardwareMap.get(DcMotor.class, "Actuator");
+        Actuator = hardwareMap.get(Servo.class, "Actuator");
         ClawServo = hardwareMap.get(Servo.class, "ClawServo");
         RotateClaw = hardwareMap.get(Servo.class, "RotateClaw");
 
@@ -135,6 +160,8 @@ public class MecanumDrive extends LinearOpMode {
         BackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         FrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         FrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        SlideRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        SlideLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         
         telemetry.addData("is active", opModeIsActive());
         telemetry.update();
