@@ -25,7 +25,7 @@ public class MecanumDrive extends LinearOpMode {
     private DcMotor Actuator;
     private DcMotor SlideLeft;
     private DcMotor SlideRight;
-   // private Servo LeftClawServo;
+    private Servo RotateClaw;
     private Servo ClawServo;
     
     /*
@@ -69,13 +69,15 @@ public class MecanumDrive extends LinearOpMode {
         {
             armSpeed = .7; //up
             armBrake = 0;
-            PivotMotor.setPower((rightStickY - armBrake) * armSpeed);
+            SlideRight.setPower((rightStickY - armBrake) * armSpeed);
+            SlideLeft.setPower((rightStickY - armBrake) * armSpeed)
         }
         else if(rightStickY > 0)
         {
             armSpeed = .3; //down
             armBrake = 0.2;
-            PivotMotor.setPower(((rightStickY / 4) - armBrake) * armSpeed);
+            SlideRight.setPower(((rightStickY / 4) - armBrake) * armSpeed);
+            SlideLeft.setPower(((rightStickY / 4) - armBrake) * armSpeed);
         }
         else
         {
@@ -110,6 +112,7 @@ public class MecanumDrive extends LinearOpMode {
         SlideRight = hardwareMap.get(DcMotor.class, "SlideRight");
         Actuator = hardwareMap.get(DcMotor.class, "Actuator");
         ClawServo = hardwareMap.get(Servo.class, "ClawServo");
+        RotateClaw = hardwareMap.get(Servo.class, "RotateClaw");
 
         /*
         Reverse motors
@@ -119,6 +122,8 @@ public class MecanumDrive extends LinearOpMode {
         FrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
         BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         FrontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        SlideRight.setDirection(DcMotorSimple.Drirection.REVERSE);
+        SlideLeft.setDirection(DcMotorSimple.Drirection.FORWARD);
         PivotMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         
         /*
