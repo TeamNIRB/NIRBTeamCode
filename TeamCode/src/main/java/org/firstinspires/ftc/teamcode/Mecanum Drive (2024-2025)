@@ -1,1 +1,248 @@
-kkk
+//NIRB Team main drive program -- Mecanum Drive; Pivot Arm; Vertical Griper
+
+//Imports
+
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
+
+@TeleOp
+
+public class MecanumDriveCurrent extends LinearOpMode {
+
+DigitalChannel digitalTouch;
+    /*
+    Declaring all of the hardware
+    */
+    private DcMotor BackLeft;
+    private DcMotor FrontLeft;
+    private DcMotor BackRight;
+    private DcMotor FrontRight;
+    private DcMotor PivotMotor;
+    private DcMotor SlideLeft;
+    private DcMotor SlideRight;
+    private CRServo Extender;
+    private Servo RotateClaw;
+    private Servo LickClaw;
+    private CRServo ClawServo;
+    /*
+    Declaring all of the Contoller inputs
+    */
+    
+    float leftStickY;
+    float leftStickX;
+    float rightStickY;
+    float rightStickX;
+    float rightBumper;
+    float leftBumper;
+    float rightStickY2;
+    float buttonA;
+    float buttonY;
+    float buttonX;
+    float buttonB;
+    float dpadDown;
+    float dpadUp;
+    
+    double motorSpeed; //Controlls the speed of the motors throughout the program
+    double armSpeed; //Controlls the speed of the arm throughout the program
+    double armBrake;
+   
+    public void mecanum() { //Function resposible for controlling drive motors
+        
+        /*
+        Correlating declared variable names to controller inputs
+        */
+        
+        //Sensors go here
+ //      TouchSensor = hardwareMap.get(DigitalChannel.class, "TouchSensor");
+        
+        leftStickY = gamepad1.left_stick_y;
+        leftStickX = gamepad1.left_stick_x;
+        rightStickX = gamepad1.right_stick_x;
+        rightStickY = gamepad2.right_stick_y;
+        rightStickY2 = gamepad2.right_stick_y;
+        rightBumper = (gamepad2.right_bumper) ? 1 : 0;
+        leftBumper = (gamepad2.left_bumper) ? 1 : 0;
+        buttonY = (gamepad2.y) ? 1 : 0;
+        buttonA = (gamepad2.a) ? 1 : 0;
+        buttonX = (gamepad2.x) ? 1 : 0;
+        buttonB = (gamepad2.b) ? 1 : 0;
+        dpadDown = (gamepad2.dpad_down) ? 1 : 0;
+        dpadUp = (gamepad2.dpad_up) ? 1 : 0;
+        
+        /*
+        Bolean logic for the mecanum drive
+        */
+        
+        BackLeft.setPower((leftStickY - rightStickX - leftStickX) * motorSpeed);
+        FrontLeft.setPower((leftStickY + rightStickX - leftStickX) * motorSpeed);
+        BackRight.setPower((leftStickY + rightStickX + leftStickX) * motorSpeed);
+        FrontRight.setPower((leftStickY - rightStickX + leftStickX) * motorSpeed);
+
+        
+        
+         if(buttonY == 1)
+        {
+            Extender.setPower(1);
+            sleep(1500);
+        
+
+        }
+        
+        else if(buttonA == 1)
+        {
+            Extender.setPower(-1);
+          sleep(1500);
+            
+
+            
+        }
+        
+        
+         else if(buttonY == 0)
+        {
+            Extender.setPower(0);
+        }
+        
+        else if(buttonA == 0)
+        {
+           Extender.setPower(0);
+        }
+        
+        if (rightStickY2 < 0)
+        {
+            armSpeed = .7; //up
+            armBrake = 0;
+            SlideRight.setPower(0.5);
+            SlideLeft.setPower(0.5);
+     //       Extender.setPosition(1);
+        }
+       else if(rightStickY2 > 0)
+        {
+            armSpeed = .3; //down
+            armBrake = 0.2;
+            SlideRight.setPower(-0.5);
+            SlideLeft.setPower(-0.5); 
+          //  Extender.setPosition(1); // 
+        }
+         if (rightStickY2 == 0)
+         {
+            SlideRight.setPower(0.1);
+            SlideLeft.setPower(0.1);
+         }
+      /*  else if 
+        {
+            armBrake = 0.4;
+            PivotMotor.setPower((rightStickY - armBrake) * armSpeed);
+        } */
+        //PivotMotor.setPower((rightStickY - armBrake) * armSpeed); //Moves arm according to the stick (should use encoder)
+        
+        if (leftBumper == 1) {
+            ClawServo.setPower(-1);
+            sleep(1000);
+            
+        }
+         if (rightBumper == 1) {
+            ClawServo.setPower(1);
+            sleep(1000);
+           
+
+            
+        }
+
+        if (dpadDown  == 1) {
+            PivotMotor.setPower(1);
+        }
+
+        if (dpadUp  == 1) {
+            PivotMotor.setPower(-1);
+        }
+        
+   }
+   
+   
+   
+   
+   
+   @Override
+    public void runOpMode() {
+        
+        /*
+        Correlating declared variable names to established control hub setups
+        */
+        
+        PivotMotor = hardwareMap.get(DcMotor.class, "PivotMotor");
+        BackLeft = hardwareMap.get(DcMotor.class, "BackLeft");
+        BackRight = hardwareMap.get(DcMotor.class, "BackRight");
+        FrontLeft = hardwareMap.get(DcMotor.class, "FrontLeft");
+        FrontRight = hardwareMap.get(DcMotor.class, "FrontRight");
+        SlideLeft = hardwareMap.get(DcMotor.class, "SlideLeft");
+        SlideRight = hardwareMap.get(DcMotor.class, "SlideRight");
+        Extender = hardwareMap.get(CRServo.class, "Extender");
+        ClawServo = hardwareMap.get(CRServo.class, "ClawServo");
+        RotateClaw = hardwareMap.get(Servo.class, "RotateClaw");
+        LickClaw = hardwareMap.get(Servo.class, "LickClaw");
+        digitalTouch = hardwareMap.get(DigitalChannel.class, "digitalTouch");
+
+
+
+
+        //sets 
+        digitalTouch.setMode(DigitalChannel.Mode.INPUT);
+
+        /*
+        Reverse motors
+        */
+        
+        BackRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        FrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        BackLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        FrontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        SlideRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        SlideLeft.setDirection(DcMotorSimple.Direction.FORWARD);
+        PivotMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        
+        /*
+        Set brake behavior
+        
+        */
+        PivotMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BackLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        SlideRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        SlideLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        
+        telemetry.addData("is active", opModeIsActive());
+        telemetry.update();
+        waitForStart();
+        while(opModeIsActive()) { //While initialized...
+            motorSpeed = 0.5 - (9 * gamepad1.left_trigger / 10); //Set motor speed
+            //armSpeed = 0.35 - (0.35 * (3 * gamepad2.left_trigger / 5)); //Set arm speed
+            //armSpeed=(0.5);
+            mecanum(); //Call function to update drive inputs
+            
+            
+            
+            if (digitalTouch.getState() == false) {
+                telemetry.addData("Button", "PRESSED");
+                    SlideRight.setPower(-0.2);
+                    SlideLeft.setPower(-0.2);
+                    Extender.setPower(1);
+                    sleep(900);
+                    Extender.setPower(0);
+                    sleep(500);
+            } else {
+                telemetry.addData("Button", "NOT PRESSED");
+            }
+            
+        }
+    }
+}
